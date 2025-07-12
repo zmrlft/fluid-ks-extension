@@ -1,0 +1,15 @@
+{
+  "DATASETS": "Datasets",
+  "DATASET_DESC": "Manage and view Fluid datasets for accelerating BigData and AI applications.",
+  "NAME": "Name",
+  "NAMESPACE": "Namespace",
+  "STATUS": "Status",
+  "DATA_SOURCE": "Data Source",
+  "UFS_TOTAL": "UFS Total",
+  "CACHE_CAPACITY": "Cache Capacity",
+  "CACHED": "Cached",
+  "CACHE_PERCENTAGE": "Cache Percentage",
+  "CREATION_TIME": "Creation Time",
+  "SEARCH_BY_NAME": "Search by name",
+  "CREATE_DATASET": "Create Dataset"
+} 
