@@ -309,7 +309,7 @@ const ResourceStatus = () => {
                   </MountItem>
                   <MountItem>
                     <MountLabel>{t('PATH')}</MountLabel>
-                    <MountValue>{mount.path || '？'}</MountValue>
+                    <MountValue>{mount.path || '-'}</MountValue>
                   </MountItem>
                   <MountItem>
                     <MountLabel>{t('READ_ONLY')}</MountLabel>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { get } from 'lodash';
-import { Button, Card, Banner } from '@kubed/components';
+import { Button, Card, Banner, Select } from '@kubed/components';
 import { DataTable } from '@ks-console/shared';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,6 +10,12 @@ declare const t: (key: string, options?: any) => string;
 
 const StyledCard = styled(Card)`
   margin-bottom: 12px;
+`;
+
+const ToolbarWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
 `;
 
 // 根据CRD定义更新Dataset类型
@@ -80,8 +86,31 @@ const formatDataset = (item: Record<string, any>): Dataset => {
 };
 
 const DatasetList: React.FC = () => {
-  const [namespace, setNamespace] = useState('default');
+  const [namespace, setNamespace] = useState<string>('');
+  const [namespaces, setNamespaces] = useState<string[]>([]);
   const navigate = useNavigate();
+
+  // 获取所有命名空间
+  React.useEffect(() => {
+    const fetchNamespaces = async () => {
+      try {
+        const response = await fetch('/api/v1/namespaces');
+        const data = await response.json();
+        if (data && data.items) {
+          const namespaceList = data.items.map((item: any) => item.metadata.name);
+          setNamespaces(namespaceList);
+        }
+      } catch (error) {
+        console.error('获取命名空间列表失败:', error);
+      }
+    };
+    fetchNamespaces();
+  }, []);
+
+  // 处理命名空间变更
+  const handleNamespaceChange = (value: string) => {
+    setNamespace(value);
+  };
 
   // 点击名称跳转到详情页的函数
   const handleNameClick = (name: string, ns: string) => {
@@ -184,11 +213,26 @@ const DatasetList: React.FC = () => {
           rowKey="metadata.name"
           tableName="dataset-list"
           columns={columns}
-          // url={`/kapis/resources.kubesphere.io/v1alpha3/namespaces/${namespace}/customresources/data.fluid.io/v1alpha1/datasets`}
-          // url={`/apis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets`}
-          url={`/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets`}
+          url={namespace ? `/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets` : '/kapis/data.fluid.io/v1alpha1/datasets'}
           format={formatDataset}
           placeholder={t('SEARCH_BY_NAME')}
+          toolbarLeft={
+            <ToolbarWrapper>
+              <Select
+                value={namespace}
+                onChange={handleNamespaceChange}
+                placeholder={t('SELECT_NAMESPACE')}
+                style={{ width: 200 }}
+              >
+                <Select.Option value="">{t('ALL_PROJECTS')}</Select.Option>
+                {namespaces.map(ns => (
+                  <Select.Option key={ns} value={ns}>
+                    {ns}
+                  </Select.Option>
+                ))}
+              </Select>
+            </ToolbarWrapper>
+          }
           toolbarRight={
             <Button>
               {t('CREATE_DATASET')}
