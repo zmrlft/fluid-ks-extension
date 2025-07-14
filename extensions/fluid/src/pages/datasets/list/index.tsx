@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { get } from 'lodash';
 import { Button, Card, Banner } from '@kubed/components';
 import { DataTable } from '@ks-console/shared';
+import { useNavigate } from 'react-router-dom';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -80,6 +81,12 @@ const formatDataset = (item: Record<string, any>): Dataset => {
 
 const DatasetList: React.FC = () => {
   const [namespace, setNamespace] = useState('default');
+  const navigate = useNavigate();
+
+  // 点击名称跳转到详情页的函数
+  const handleNameClick = (name: string, ns: string) => {
+    navigate(`/fluid/datasets/${ns}/${name}`);
+  };
 
   // 根据CRD定义完善表格列
   const columns = [
@@ -87,7 +94,17 @@ const DatasetList: React.FC = () => {
       title: t('NAME'),
       dataIndex: 'metadata.name',
       width: '15%',
-      render: (name: string, record: Dataset) => <span>{name || get(record, 'metadata.name', '-')}</span>,
+      render: (name: string, record: Dataset) => (
+        <a 
+          onClick={(e) => {
+            e.preventDefault();
+            handleNameClick(name || get(record, 'metadata.name', ''), get(record, 'metadata.namespace', 'default'));
+          }}
+          href="#"
+        >
+          {name || get(record, 'metadata.name', '-')}
+        </a>
+      ),
     },
     {
       title: t('NAMESPACE'),
@@ -157,7 +174,7 @@ const DatasetList: React.FC = () => {
   return (
     <div>
       <Banner 
-        icon="数据集图标"
+        icon="dataset"
         title={t('DATASETS')}
         description={t('DATASET_DESC')}
         className="mb12"
