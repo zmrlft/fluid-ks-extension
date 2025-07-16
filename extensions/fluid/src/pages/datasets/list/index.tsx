@@ -90,6 +90,31 @@ const formatDataset = (item: Record<string, any>): Dataset => {
   return dataset;
 };
 
+// 转换请求参数，将metadata.name转换为name
+const transformRequestParams = (params: Record<string, any>) => {
+  const { parameters = {}, pageIndex, filters = [], pageSize } = params;
+  console.log('转换前的请求参数:', params);
+  
+  // 从filters中获取搜索关键词
+  const keyword = filters[0]?.value;
+  
+  // 构建查询参数
+  const result: Record<string, any> = {
+    ...parameters,
+    limit: pageSize,
+    page: pageIndex + 1,
+  };
+  
+  // 如果有搜索关键词，添加name参数
+  if (keyword) {
+    result.name = keyword;
+    console.log('添加搜索关键词:', keyword);
+  }
+  
+  console.log('转换后的请求参数:', result);
+  return result;
+};
+
 const DatasetList: React.FC = () => {
   const [namespace, setNamespace] = useState<string>('');
   const [namespaces, setNamespaces] = useState<string[]>([]);
@@ -98,6 +123,7 @@ const DatasetList: React.FC = () => {
   const params: Record<string, any> = useParams();
   const navigate = useNavigate();
   const tableRef = useRef<TableRef<Dataset>>(null);
+  console.log(params,'params');
 
   // 获取所有命名空间
   useEffect(() => {
@@ -262,6 +288,8 @@ const DatasetList: React.FC = () => {
             url={namespace ? `/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets` : '/kapis/data.fluid.io/v1alpha1/datasets'}
             format={formatDataset}
             placeholder={t('SEARCH_BY_NAME')}
+            transformRequestParams={transformRequestParams}
+            simpleSearch={true}
             watchOptions={{
               enabled: true,
               module: 'datasets',
