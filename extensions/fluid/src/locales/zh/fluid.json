@@ -38,6 +38,7 @@
   "DELETE": "删除",
   "EDIT_DATASET_DESC": "编辑数据集功能尚未实现",
   "DELETE_DATASET_DESC": "删除数据集功能尚未实现",
+  "CREATE_DATASET_DESC": "创建数据集功能尚未实现",
   "DOWNLOAD": "下载",
   "TYPE": "类型",
   "REASON": "原因",
@@ -46,5 +47,13 @@
   "MESSAGE": "消息",
   "EVENT_PL": "事件",
   "LABEL_PL": "标签",
-  "ATTRIBUTES": "属性"
+  "ATTRIBUTES": "属性",
+  "DATASET_TOPOLOGY": "数据集拓扑",
+  "FETCH_ERROR_TITLE": "获取数据失败",
+  "RETRY": "重试",
+  "SELECT_NAMESPACE": "选择命名空间",
+  "ALL_PROJECTS": "所有项目",
+  "NO_DATASET_FOUND": "未找到数据集",
+  "NO_DATASET_FOUND_DESC": "当前没有符合条件的数据集。您可以尝试创建一个新的数据集。",
+  "SEARCH": "搜索"
 } 

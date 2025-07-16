@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { get } from 'lodash';
-import { Button, Card, Banner, Select } from '@kubed/components';
-import { DataTable } from '@ks-console/shared';
-import { useNavigate } from 'react-router-dom';
+import { Button, Card, Banner, Select, Empty } from '@kubed/components';
+import { DataTable, TableRef } from '@ks-console/shared';
+import { useNavigate, useParams } from 'react-router-dom';
+import { getWatchListUrl } from '@ks-console/shared/lib/utils/urlHelper';
+import { Book2Duotone } from '@kubed/icons';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -15,7 +17,8 @@ const StyledCard = styled(Card)`
 const ToolbarWrapper = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 20px;
+  margin-right: 20px;
 `;
 
 // 根据CRD定义更新Dataset类型
@@ -69,7 +72,7 @@ interface Dataset {
 
 // 格式化数据
 const formatDataset = (item: Record<string, any>): Dataset => {
-  return {
+  const dataset = {
     ...item,
     metadata: item.metadata || {},
     spec: item.spec || { mounts: [] },
@@ -83,18 +86,31 @@ const formatDataset = (item: Record<string, any>): Dataset => {
       }
     }
   };
+  
+  return dataset;
 };
 
 const DatasetList: React.FC = () => {
   const [namespace, setNamespace] = useState<string>('');
   const [namespaces, setNamespaces] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const params: Record<string, any> = useParams();
   const navigate = useNavigate();
+  const tableRef = useRef<TableRef<Dataset>>(null);
 
   // 获取所有命名空间
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchNamespaces = async () => {
       try {
+        setIsLoading(true);
+        setError(null);
         const response = await fetch('/api/v1/namespaces');
+        
+        if (!response.ok) {
+          throw new Error(`${response.status}: ${response.statusText}`);
+        }
+        
         const data = await response.json();
         if (data && data.items) {
           const namespaceList = data.items.map((item: any) => item.metadata.name);
@@ -102,6 +118,9 @@ const DatasetList: React.FC = () => {
         }
       } catch (error) {
         console.error('获取命名空间列表失败:', error);
+        setError(error instanceof Error ? error.message : String(error));
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchNamespaces();
@@ -116,129 +135,163 @@ const DatasetList: React.FC = () => {
   const handleNameClick = (name: string, ns: string) => {
     navigate(`/fluid/datasets/${ns}/${name}`);
   };
+  
+  // 创建数据集按钮点击处理
+  const handleCreateDataset = () => {
+    // 暂时实现为提示信息
+    console.log('创建数据集功能待实现');
+    alert(t('CREATE_DATASET_DESC') || '创建数据集功能待实现');
+  };
+
+  // 刷新表格数据
+  const handleRefresh = () => {
+    if (tableRef.current) {
+      tableRef.current.refetch();
+    }
+  };
 
   // 根据CRD定义完善表格列
   const columns = [
     {
       title: t('NAME'),
-      dataIndex: 'metadata.name',
+      field: 'metadata.name',
       width: '15%',
-      render: (name: string, record: Dataset) => (
+      searchable: true,
+      render: (value: any, record: Dataset) => (
         <a 
           onClick={(e) => {
             e.preventDefault();
-            handleNameClick(name || get(record, 'metadata.name', ''), get(record, 'metadata.namespace', 'default'));
+            handleNameClick(get(record, 'metadata.name', ''), get(record, 'metadata.namespace', 'default'));
           }}
           href="#"
         >
-          {name || get(record, 'metadata.name', '-')}
+          {get(record, 'metadata.name', '-')}
         </a>
       ),
     },
     {
       title: t('NAMESPACE'),
-      dataIndex: 'metadata.namespace',
+      field: 'metadata.namespace',
       width: '10%',
-      render: (ns: string, record: Dataset) => <span>{ns || get(record, 'metadata.namespace', '-')}</span>,
+      canHide: true,
+      render: (value: any, record: Dataset) => <span>{get(record, 'metadata.namespace', '-')}</span>,
     },
     {
       title: t('STATUS'),
-      dataIndex: 'status.phase',
+      field: 'status.phase',
       width: '10%',
-      render: (phase: string, record: Dataset) => <span>{phase || get(record, 'status.phase', '-')}</span>,
+      canHide: true,
+      searchable: true,
+      render: (value: any, record: Dataset) => <span>{get(record, 'status.phase', '-')}</span>,
     },
     {
       title: t('DATA_SOURCE'),
-      dataIndex: 'spec.mounts',
+      field: 'spec.mounts[0].mountPoint',
       width: '20%',
-      render: (mounts: Array<{mountPoint: string; name: string}> = [], record: Dataset) => {
-        const mountPoint = mounts?.[0]?.mountPoint || 
-                          get(record, 'spec.mounts[0].mountPoint') || 
-                          '-';
+      canHide: true,
+      searchable: true,
+      render: (value: any, record: Dataset) => {
+        const mountPoint = get(record, 'spec.mounts[0].mountPoint', '-');
         return <span>{mountPoint}</span>;
       },
     },
     {
       title: t('UFS_TOTAL'),
-      dataIndex: 'status.ufsTotal',
+      field: 'status.ufsTotal',
       width: '10%',
-      render: (total: string, record: Dataset) => (
-        <span>{total || get(record, 'status.ufsTotal', '-')}</span>
-      ),
+      sortable: true,
+      canHide: true,
+      render: (value: any, record: Dataset) => <span>{get(record, 'status.ufsTotal', '-')}</span>,
     },
     {
       title: t('CACHE_CAPACITY'),
-      dataIndex: 'status.cacheStates.cacheCapacity',
+      field: 'status.cacheStates.cacheCapacity',
       width: '10%',
-      render: (capacity: string, record: Dataset) => (
-        <span>{capacity || get(record, 'status.cacheStates.cacheCapacity', '-')}</span>
-      ),
+      sortable: true,
+      canHide: true,
+      render: (value: any, record: Dataset) => <span>{get(record, 'status.cacheStates.cacheCapacity', '-')}</span>,
     },
     {
       title: t('CACHED'),
-      dataIndex: 'status.cacheStates.cached',
+      field: 'status.cacheStates.cached',
       width: '10%',
-      render: (cached: string, record: Dataset) => (
-        <span>{cached || get(record, 'status.cacheStates.cached', '-')}</span>
-      ),
+      sortable: true,
+      canHide: true,
+      render: (value: any, record: Dataset) => <span>{get(record, 'status.cacheStates.cached', '-')}</span>,
     },
     {
       title: t('CACHE_PERCENTAGE'),
-      dataIndex: 'status.cacheStates.cachedPercentage',
+      field: 'status.cacheStates.cachedPercentage',
       width: '10%',
-      render: (percentage: string, record: Dataset) => (
-        <span>{percentage || get(record, 'status.cacheStates.cachedPercentage', '0%')}</span>
-      ),
+      sortable: true,
+      canHide: true,
+      render: (value: any, record: Dataset) => <span>{get(record, 'status.cacheStates.cachedPercentage', '0%')}</span>,
     },
     {
       title: t('CREATION_TIME'),
-      dataIndex: 'metadata.creationTimestamp',
+      field: 'metadata.creationTimestamp',
       width: '10%',
-      render: (time: string, record: Dataset) => (
-        <span>{time || get(record, 'metadata.creationTimestamp', '-')}</span>
-      ),
+      sortable: true,
+      canHide: true,
+      render: (value: any, record: Dataset) => <span>{get(record, 'metadata.creationTimestamp', '-')}</span>,
     },
   ] as any;
 
   return (
     <div>
       <Banner 
-        icon="dataset"
+        icon={<Book2Duotone />}
         title={t('DATASETS')}
         description={t('DATASET_DESC')}
         className="mb12"
       />
       <StyledCard>
-        <DataTable
-          rowKey="metadata.name"
-          tableName="dataset-list"
-          columns={columns}
-          url={namespace ? `/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets` : '/kapis/data.fluid.io/v1alpha1/datasets'}
-          format={formatDataset}
-          placeholder={t('SEARCH_BY_NAME')}
-          toolbarLeft={
-            <ToolbarWrapper>
-              <Select
-                value={namespace}
-                onChange={handleNamespaceChange}
-                placeholder={t('SELECT_NAMESPACE')}
-                style={{ width: 200 }}
-              >
-                <Select.Option value="">{t('ALL_PROJECTS')}</Select.Option>
-                {namespaces.map(ns => (
-                  <Select.Option key={ns} value={ns}>
-                    {ns}
-                  </Select.Option>
-                ))}
-              </Select>
-            </ToolbarWrapper>
-          }
-          toolbarRight={
-            <Button>
-              {t('CREATE_DATASET')}
-            </Button>
-          }
-        />
+        {error ? (
+          <Empty 
+            icon="warning" 
+            title={t('FETCH_ERROR_TITLE')} 
+            description={error} 
+            action={<Button onClick={handleRefresh}>{t('RETRY')}</Button>}
+          />
+        ) : (
+          <DataTable
+            ref={tableRef}
+            rowKey="metadata.name"
+            tableName="dataset-list"
+            columns={columns}
+            url={namespace ? `/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets` : '/kapis/data.fluid.io/v1alpha1/datasets'}
+            format={formatDataset}
+            placeholder={t('SEARCH_BY_NAME')}
+            watchOptions={{
+              enabled: true,
+              module: 'datasets',
+              url: getWatchListUrl(params),
+            }}
+            toolbarLeft={
+              <ToolbarWrapper>
+                <Select
+                  value={namespace}
+                  onChange={handleNamespaceChange}
+                  placeholder={t('SELECT_NAMESPACE')}
+                  style={{ width: 200 }}
+                  disabled={isLoading}
+                >
+                  <Select.Option value="">{t('ALL_PROJECTS')}</Select.Option>
+                  {namespaces.map(ns => (
+                    <Select.Option key={ns} value={ns}>
+                      {ns}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </ToolbarWrapper>
+            }
+            toolbarRight={
+              <Button onClick={handleCreateDataset} style={{ marginLeft: '16px' }}>
+                {t('CREATE_DATASET')}
+              </Button>
+            }
+          />
+        )}
       </StyledCard>
     </div>
   );

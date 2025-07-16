@@ -38,6 +38,7 @@
   "DELETE": "Delete",
   "EDIT_DATASET_DESC": "Edit dataset feature not implemented yet",
   "DELETE_DATASET_DESC": "Delete dataset feature not implemented yet",
+  "CREATE_DATASET_DESC": "Create dataset feature not implemented yet",
   "DOWNLOAD": "Download",
   "TYPE": "Type",
   "REASON": "Reason",
@@ -47,5 +48,12 @@
   "EVENT_PL": "Events",
   "LABEL_PL": "Labels",
   "ATTRIBUTES": "Attributes",
-  "DATASET_TOPOLOGY": "Dataset Topology"
+  "DATASET_TOPOLOGY": "Dataset Topology",
+  "FETCH_ERROR_TITLE": "Failed to Fetch Data",
+  "RETRY": "Retry",
+  "SELECT_NAMESPACE": "Select Namespace",
+  "ALL_PROJECTS": "All Projects",
+  "NO_DATASET_FOUND": "No Dataset Found",
+  "NO_DATASET_FOUND_DESC": "There are no datasets matching your criteria. You can try creating a new dataset.",
+  "SEARCH": "Search"
 } 
