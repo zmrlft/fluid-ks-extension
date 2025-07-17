@@ -282,7 +282,7 @@ const DatasetList: React.FC = () => {
         ) : (
           <DataTable
             ref={tableRef}
-            rowKey="metadata.name"
+            rowKey="metadata.uid"
             tableName="dataset-list"
             columns={columns}
             url={namespace ? `/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets` : '/kapis/data.fluid.io/v1alpha1/datasets'}
@@ -293,7 +293,9 @@ const DatasetList: React.FC = () => {
             watchOptions={{
               enabled: true,
               module: 'datasets',
-              url: getWatchListUrl(params),
+              url: namespace
+              ? `/clusters/host/apis/data.fluid.io/v1alpha1/watch/namespaces/${namespace}/datasets?watch=true`
+              : `/clusters/host/apis/data.fluid.io/v1alpha1/watch/datasets?watch=true`,
             }}
             toolbarLeft={
               <ToolbarWrapper>
