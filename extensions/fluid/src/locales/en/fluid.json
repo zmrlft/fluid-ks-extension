@@ -55,5 +55,13 @@
   "ALL_PROJECTS": "All Projects",
   "NO_DATASET_FOUND": "No Dataset Found",
   "NO_DATASET_FOUND_DESC": "There are no datasets matching your criteria. You can try creating a new dataset.",
-  "SEARCH": "Search"
+  "SEARCH": "Search",
+  
+  "RUNTIMES": "Runtimes",
+  "RUNTIME": "Runtime",
+  "RUNTIME_LIST": "Runtime List",
+  "RUNTIMES_DESC": "Manage and view Fluid runtime instances that support various distributed cache engines.",
+  "MANAGE_RUNTIMES": "Manage Runtimes",
+  "NO_RUNTIME_FOUND": "No Runtime Found",
+  "NO_RUNTIME_FOUND_DESC": "There are no runtimes matching your criteria."
 } 

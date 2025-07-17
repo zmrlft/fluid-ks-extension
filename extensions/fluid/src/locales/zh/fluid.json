@@ -55,5 +55,13 @@
   "ALL_PROJECTS": "所有项目",
   "NO_DATASET_FOUND": "未找到数据集",
   "NO_DATASET_FOUND_DESC": "当前没有符合条件的数据集。您可以尝试创建一个新的数据集。",
-  "SEARCH": "搜索"
+  "SEARCH": "搜索",
+  
+  "RUNTIMES": "运行时",
+  "RUNTIME": "运行时",
+  "RUNTIME_LIST": "运行时列表",
+  "RUNTIMES_DESC": "管理和查看Fluid运行时实例，支持多种分布式缓存引擎。",
+  "MANAGE_RUNTIMES": "管理运行时",
+  "NO_RUNTIME_FOUND": "未找到运行时",
+  "NO_RUNTIME_FOUND_DESC": "当前没有符合条件的运行时。"
 } 

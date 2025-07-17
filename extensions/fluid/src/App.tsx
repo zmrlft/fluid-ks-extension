@@ -59,6 +59,10 @@ export default function App() {
   const handleNavigateToDatasets = () => {
     navigate('/fluid/datasets');
   };
+  
+  const handleNavigateToRuntimes = () => {
+    navigate('/fluid/runtimes');
+  };
 
   return (
     <Container>
@@ -72,6 +76,12 @@ export default function App() {
           <CardTitle>{t('DATASETS')}</CardTitle>
           <CardDesc>{t('DATASET_DESC')}</CardDesc>
           <Button>{t('MANAGE_DATASETS')}</Button>
+        </StyledCard>
+
+        <StyledCard onClick={handleNavigateToRuntimes}>
+          <CardTitle>{t('RUNTIMES')}</CardTitle>
+          <CardDesc>{t('RUNTIMES_DESC')}</CardDesc>
+          <Button>{t('MANAGE_RUNTIMES')}</Button>
         </StyledCard>
       </CardWrapper>
     </Container>
