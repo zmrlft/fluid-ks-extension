@@ -37,7 +37,7 @@ interface RuntimeItem {
   metadata: {
     name: string;
     namespace: string;
-    uid?: string;
+    uid: string;
   };
 }
 
@@ -48,8 +48,9 @@ const RuntimeList: React.FC = () => {
   const [namespaces, setNamespaces] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [currentRuntimeType, setCurrentRuntimeType] = useState<number>(0); // 当前选择的 Runtime 类型索引
   const tableRef = useRef<TableRef<any>>(null);
-
+  
   // 获取所有 namespace
   useEffect(() => {
     const fetchNamespaces = async () => {
@@ -81,6 +82,17 @@ const RuntimeList: React.FC = () => {
   // 处理 namespace 变更
   const handleNamespaceChange = (value: string) => {
     setNamespace(value);
+    if (tableRef.current) {
+      tableRef.current.refetch();
+    }
+  };
+
+  // 处理 Runtime 类型切换
+  const handleRuntimeTypeChange = (index: number) => {
+    setCurrentRuntimeType(index);
+    if (tableRef.current) {
+      tableRef.current.refetch();
+    }
   };
 
   // 刷新表格数据
@@ -91,19 +103,14 @@ const RuntimeList: React.FC = () => {
   };
 
   // 点击名称跳转详情页（预留）
-  const handleNameClick = (name: string) => {
+  const handleNameClick = (name: string, ns: string) => {
     // TODO: 实现跳转详情页
     alert(t('DATASET_NOT_FOUND_DESC'));
   };
 
   // 格式化 Runtime 数据
   const formatRuntime = (item: any): RuntimeItem => {
-    // 查找对应的 runtime 类型
-    const typeMeta = runtimeTypeList.find(rt => 
-      rt.kind === item.kind || 
-      (item.apiVersion && item.apiVersion.includes(rt.apiVersion))
-    ) || { displayName: item.kind || 'Unknown' };
-
+    const typeMeta = runtimeTypeList[currentRuntimeType];
     return {
       name: get(item, 'metadata.name', ''),
       namespace: get(item, 'metadata.namespace', ''),
@@ -122,7 +129,7 @@ const RuntimeList: React.FC = () => {
       metadata: {
         name: get(item, 'metadata.name', ''),
         namespace: get(item, 'metadata.namespace', ''),
-        uid: get(item, 'metadata.uid', `${get(item, 'metadata.namespace', '')}-${get(item, 'metadata.name', '')}`),
+        uid: get(item, 'metadata.uid', `${get(item, 'metadata.namespace', '')}-${get(item, 'metadata.name', '')}-${typeMeta.kind}`),
       }
     };
   };
@@ -160,7 +167,7 @@ const RuntimeList: React.FC = () => {
         <a 
           onClick={(e) => {
             e.preventDefault();
-            handleNameClick(record.name);
+            handleNameClick(record.name, record.namespace);
           }}
           href="#"
         >
@@ -225,13 +232,10 @@ const RuntimeList: React.FC = () => {
     },
   ] as any;
 
-  // 选择第一个 runtime 类型作为默认 API 路径
-  // 注意：由于需要合并多个 runtime 类型，这种方式只能获取一种类型的数据
-  // 在生产环境中，需要实现自定义后端 API 来合并多种 runtime 类型
-  const defaultRuntimeType = runtimeTypeList[0];
+  // 获取 API 路径
   const apiPath = namespace 
-    ? defaultRuntimeType.getApiPath(namespace)
-    : defaultRuntimeType.getApiPath();
+    ? runtimeTypeList[currentRuntimeType].getApiPath(namespace)
+    : runtimeTypeList[currentRuntimeType].getApiPath();
 
   return (
     <div>
@@ -277,6 +281,20 @@ const RuntimeList: React.FC = () => {
                     </Select.Option>
                   ))}
                 </Select>
+                <Select
+                  value={currentRuntimeType}
+                  onChange={handleRuntimeTypeChange}
+                  placeholder={t('TYPE')}
+                  style={{ width: 150 }}
+                  disabled={isLoading}
+                >
+                  {runtimeTypeList.map((type, index) => (
+                    <Select.Option key={type.kind} value={index}>
+                      {type.displayName}
+                    </Select.Option>
+                  ))}
+                </Select>
+                
               </ToolbarWrapper>
             }
           />
@@ -286,4 +304,4 @@ const RuntimeList: React.FC = () => {
   );
 };
 
-export default RuntimeList; 
+export default RuntimeList;
