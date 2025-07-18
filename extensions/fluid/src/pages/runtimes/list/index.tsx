@@ -4,7 +4,7 @@ import { get } from 'lodash';
 import { Button, Card, Banner, Select, Empty } from '@kubed/components';
 import { DataTable, TableRef } from '@ks-console/shared';
 import { useNavigate } from 'react-router-dom';
-import { LightningCircleDuotone } from '@kubed/icons';
+import { RocketDuotone } from '@kubed/icons';
 import { runtimeTypeList, RuntimeTypeMeta } from '../runtimeMap';
 
 // 声明全局 t 函数（国际化）
@@ -240,7 +240,7 @@ const RuntimeList: React.FC = () => {
   return (
     <div>
       <Banner
-        icon={<LightningCircleDuotone/>}
+        icon={<RocketDuotone/>}
         title={t('RUNTIMES')}
         description={t('RUNTIMES_DESC')}
         className="mb12"

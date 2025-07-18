@@ -1,89 +1,147 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { Banner, Card } from '@kubed/components';
+import { Book2Duotone, RocketDuotone, FluentdDuotone } from '@kubed/icons';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
-import { Button, Card } from '@kubed/components';
 
 declare const t: (key: string, options?: any) => string;
 
-const Container = styled.div`
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-`;
-
-const Title = styled.h2`
-  margin-bottom: 1.5rem;
-  text-align: center;
-`;
-
-const Description = styled.p`
-  margin-bottom: 2rem;
-  text-align: center;
-  color: #79879c;
-  font-size: 14px;
-`;
-
-const CardWrapper = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  margin-top: 2rem;
-`;
-
-const StyledCard = styled(Card)`
+// 由于 Layout 不在 @kubed/components 中，我们自己创建一个简单的 Layout
+const Layout = styled.div`
   display: flex;
-  flex-direction: column;
-  height: 220px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    transform: translateY(-4px);
+  width: 100%;
+  height: 100%;
+`;
+
+const Sider = styled.div`
+  flex: 0 0 220px;
+  width: 220px;
+  background: #fff;
+  box-shadow: 0 4px 8px rgba(36, 46, 66, 0.06);
+  z-index: 2;
+  overflow: auto;
+`;
+
+const Content = styled.div`
+  flex: 1;
+  overflow: auto;
+`;
+
+const FluidLayout = styled(Layout)`
+  height: 100vh;
+`;
+
+const LogoWrapper = styled.div`
+  height: 40px;
+  padding: 0 20px;
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const Logo = styled.div`
+  font-size: 18px;
+  font-weight: bold;
+  color: #00aa72;
+`;
+
+const ContentWrapper = styled.div`
+  padding: 24px;
+  background-color: #f5f7fa;
+  height: 100%;
+  overflow: auto;
+`;
+
+const StyledMenu = styled.div`
+  .menu-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    margin: 4px 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    
+    .menu-icon {
+      margin-right: 10px;
+    }
+    
+    &:hover {
+      background-color: #f5f7fa;
+    }
+    
+    &.selected {
+      background-color: #f9fbfd;
+      border-right: 3px solid #00aa72;
+      
+      .menu-icon {
+        color: #00aa72;
+      }
+    }
   }
 `;
 
-const CardTitle = styled.h3`
-  margin: 0 0 1rem 0;
+const PageHeader = styled(Banner)`
+  margin-bottom: 20px;
 `;
 
-const CardDesc = styled.p`
-  color: #79879c;
-  flex-grow: 1;
-  margin-bottom: 1rem;
-`;
+const menuItems = [
+  {
+    key: 'datasets',
+    icon: <Book2Duotone />,
+    label: 'DATASETS'
+  },
+  {
+    key: 'runtimes',
+    icon: <RocketDuotone />,
+    label: 'RUNTIMES'
+  }
+];
 
 export default function App() {
   const navigate = useNavigate();
-
-  const handleNavigateToDatasets = () => {
-    navigate('/fluid/datasets');
-  };
+  const location = useLocation();
   
-  const handleNavigateToRuntimes = () => {
-    navigate('/fluid/runtimes');
+  const selectedKeys = useMemo(() => {
+    if (location.pathname.includes('/datasets')) {
+      return 'datasets';
+    }
+    if (location.pathname.includes('/runtimes')) {
+      return 'runtimes';
+    }
+    return '';
+  }, [location]);
+
+  const handleMenuClick = (key: string) => {
+    navigate(`/fluid/${key}`);
   };
 
   return (
-    <Container>
-      <Title>Fluid</Title>
-      <Description>
-        Fluid, elastic data abstraction and acceleration for BigData/AI applications in cloud.
-      </Description>
-
-      <CardWrapper>
-        <StyledCard onClick={handleNavigateToDatasets}>
-          <CardTitle>{t('DATASETS')}</CardTitle>
-          <CardDesc>{t('DATASET_DESC')}</CardDesc>
-          <Button>{t('MANAGE_DATASETS')}</Button>
-        </StyledCard>
-
-        <StyledCard onClick={handleNavigateToRuntimes}>
-          <CardTitle>{t('RUNTIMES')}</CardTitle>
-          <CardDesc>{t('RUNTIMES_DESC')}</CardDesc>
-          <Button>{t('MANAGE_RUNTIMES')}</Button>
-        </StyledCard>
-      </CardWrapper>
-    </Container>
+    <FluidLayout>
+      <Sider>
+        <LogoWrapper>
+          <FluentdDuotone style={{ fontSize: '24px', color: '#00aa72' }} />
+          <Logo>Fluid</Logo>
+        </LogoWrapper>
+        <StyledMenu>
+          {menuItems.map((item) => (
+            <div
+              key={item.key}
+              className={`menu-item ${selectedKeys === item.key ? 'selected' : ''}`}
+              onClick={() => handleMenuClick(item.key)}
+            >
+              <span className="menu-icon">{item.icon}</span>
+              <span>{t(item.label)}</span>
+            </div>
+          ))}
+        </StyledMenu>
+      </Sider>
+      <Content>
+        <ContentWrapper>
+          
+          <Outlet />
+        </ContentWrapper>
+      </Content>
+    </FluidLayout>
   );
 }

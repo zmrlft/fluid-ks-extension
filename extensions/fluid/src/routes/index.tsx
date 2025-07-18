@@ -1,4 +1,5 @@
 import React from 'react';
+import { Navigate } from 'react-router-dom';
 import App from '../App';
 import DatasetList from '../pages/datasets/list';
 import RuntimeList from '../pages/runtimes/list';
@@ -8,14 +9,17 @@ export default [
   {
     path: '/fluid',
     element: <App />,
-  },
-  {
-    path: '/fluid/datasets',
-    element: <DatasetList />,
-  },
-  {
-    path: '/fluid/runtimes',
-    element: <RuntimeList />,
+    children: [
+      { index: true, element: <Navigate to="datasets" replace /> },
+      {
+        path: 'datasets',
+        element: <DatasetList />,
+      },
+      {
+        path: 'runtimes',
+        element: <RuntimeList />,
+      },
+    ]
   },
   ...datasetDetailRoutes,
 ];
