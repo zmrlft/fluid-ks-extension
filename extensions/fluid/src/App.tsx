@@ -40,12 +40,6 @@ const LogoWrapper = styled.div`
   gap: 8px;
 `;
 
-const Logo = styled.div`
-  font-size: 18px;
-  font-weight: bold;
-  color: #00aa72;
-`;
-
 const ContentWrapper = styled.div`
   padding: 24px;
   background-color: #f5f7fa;
@@ -120,8 +114,7 @@ export default function App() {
     <FluidLayout>
       <Sider>
         <LogoWrapper>
-          <FluentdDuotone style={{ fontSize: '24px', color: '#00aa72' }} />
-          <Logo>Fluid</Logo>
+          <img src={'https://fluid-cloudnative.github.io/img/fluid-horizontal-color.png'} alt="Fluid Logo" style={{ width: '120px', height: '40px' }} />
         </LogoWrapper>
         <StyledMenu>
           {menuItems.map((item) => (
