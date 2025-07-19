@@ -6,6 +6,7 @@ import { DataTable, TableRef } from '@ks-console/shared';
 import { useNavigate } from 'react-router-dom';
 import { RocketDuotone } from '@kubed/icons';
 import { runtimeTypeList, RuntimeTypeMeta } from '../runtimeMap';
+import { transformRequestParams } from '../../../utils';
 
 // 声明全局 t 函数（国际化）
 declare const t: (key: string) => string;
@@ -134,28 +135,6 @@ const RuntimeList: React.FC = () => {
     };
   };
 
-  // 转换请求参数
-  const transformRequestParams = (params: Record<string, any>) => {
-    const { parameters = {}, pageIndex, filters = [], pageSize } = params;
-    
-    // 从filters中获取搜索关键词
-    const keyword = filters[0]?.value;
-    
-    // 构建查询参数
-    const result: Record<string, any> = {
-      ...parameters,
-      limit: pageSize,
-      page: pageIndex + 1,
-    };
-    
-    // 如果有搜索关键词，添加name参数
-    if (keyword) {
-      result.name = keyword;
-    }
-    
-    return result;
-  };
-
   // 表格列定义
   const columns = [
     {
@@ -217,18 +196,21 @@ const RuntimeList: React.FC = () => {
       field: 'cacheCapacity',
       width: '15%',
       canHide: true,
+      sortable: true,
     },
     {
       title: t('CACHED'),
       field: 'cached',
       width: '10%',
       canHide: true,
+      sortable: true,
     },
     {
       title: t('CACHE_PERCENTAGE'),
       field: 'cachedPercentage',
       width: '10%',
       canHide: true,
+      sortable: true,
     },
   ] as any;
 

@@ -4,8 +4,8 @@ import { get } from 'lodash';
 import { Button, Card, Banner, Select, Empty } from '@kubed/components';
 import { DataTable, TableRef } from '@ks-console/shared';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getWatchListUrl } from '@ks-console/shared/lib/utils/urlHelper';
 import { Book2Duotone } from '@kubed/icons';
+import { transformRequestParams } from '../../../utils';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -88,40 +88,6 @@ const formatDataset = (item: Record<string, any>): Dataset => {
   };
   
   return dataset;
-};
-
-// 转换请求参数，将metadata.name转换为name
-const transformRequestParams = (params: Record<string, any>) => {
-  const { parameters = {}, pageIndex, filters = [], pageSize, sortBy } = params;
-  console.log('转换前的请求参数:', params);
-  
-  // 从filters中获取搜索关键词
-  const keyword = filters[0]?.value;
-  
-  // 构建查询参数
-  const result: Record<string, any> = {
-    ...parameters,
-    limit: pageSize,
-    page: pageIndex + 1,
-  };
-  
-  // 如果有搜索关键词，添加name参数
-  if (keyword) {
-    result.name = keyword;
-    console.log('添加搜索关键词:', keyword);
-  }
-
-  if (sortBy && sortBy.length > 0) {
-    // sortBy=name&ascending=true
-    console.log('sortBy', sortBy);
-    const { id, desc } = sortBy[0];
-    result.sortBy = id;
-    result.ascending = !desc;
-  }
-  
-  
-  console.log('转换后的请求参数:', result);
-  return result;
 };
 
 const DatasetList: React.FC = () => {
