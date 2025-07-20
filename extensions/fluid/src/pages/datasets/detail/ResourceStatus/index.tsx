@@ -7,6 +7,7 @@ import { useCacheStore as useStore } from '@ks-console/shared';
 import { Card } from '@kubed/components';
 import { get } from 'lodash';
 import styled from 'styled-components';
+import { SimpleCircle } from '@ks-console/shared';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -64,46 +65,6 @@ const InfoLabel = styled.div`
 const InfoValue = styled.div`
   color: #242e42;
   font-size: 14px;
-`;
-
-const ProgressWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 12px;
-`;
-
-const ProgressHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 4px;
-`;
-
-const ProgressLabel = styled.div`
-  font-weight: 600;
-  color: #242e42;
-  font-size: 12px;
-`;
-
-const ProgressValue = styled.div`
-  color: #242e42;
-  font-size: 12px;
-`;
-
-const ProgressBar = styled.div<{ percent: number }>`
-  width: 100%;
-  height: 6px;
-  background-color: #e9e9e9;
-  border-radius: 3px;
-  overflow: hidden;
-  
-  &::after {
-    content: '';
-    display: block;
-    width: ${props => `${props.percent}%`};
-    height: 100%;
-    background-color: #55bc8a;
-    border-radius: 3px;
-  }
 `;
 
 const TopologyTable = styled.table`
@@ -192,6 +153,43 @@ const ResourceStatus = () => {
     return parseInt(percentage.replace('%', ''), 10) || 0;
   };
 
+  // 将不同数据单位统一转换为 GiB
+  const convertUnit = (value: string): number => {
+    if (!value || value === '-') return 0;
+    
+    // 提取数字部分和单位部分
+    const regex = /^([\d.]+)\s*([A-Za-z]+)$/;
+    const match = value.match(regex);
+    
+    if (!match) return parseFloat(value) || 0;
+    
+    const num = parseFloat(match[1]);
+    const unit = match[2].toLowerCase();
+    
+    // 转换为 GiB
+    switch (unit) {
+      case 'b':
+        return num / (1024 * 1024 * 1024);
+      case 'kb':
+      case 'kib':
+        return num / (1024 * 1024);
+      case 'mb':
+      case 'mib':
+        return num / 1024;
+      case 'gb':
+      case 'gib':
+        return num;
+      case 'tb':
+      case 'tib':
+        return num * 1024;
+      case 'pb':
+      case 'pib':
+        return num * 1024 * 1024;
+      default:
+        return num;
+    }
+  };
+
   // 备用的拓扑关系表格
   const renderTopologyTable = () => {
     const datasetName = detail.metadata?.name || 'dataset';
@@ -264,25 +262,45 @@ const ResourceStatus = () => {
         <Card sectionTitle={t('CACHE_STATUS')}>
           <InfoGrid>
             <InfoItem>
-              <InfoLabel>{t('CACHE_CAPACITY')}</InfoLabel>
-              <InfoValue>{get(detail, 'status.cacheStates.cacheCapacity', '-')}</InfoValue>
+              <InfoLabel>{t('CACHE_CAPACITY_USAGE')}</InfoLabel>
+              <SimpleCircle
+                theme="light"
+                title={t('CACHE_CAPACITY_USAGE')}
+                categories={[t('CACHED'), t('CACHE_CAPACITY')]}
+                value={convertUnit(get(detail, 'status.cacheStates.cached', '-'))}
+                total={convertUnit(get(detail, 'status.cacheStates.cacheCapacity', '-'))}
+                showRate
+                unit='GiB'
+              />
             </InfoItem>
             <InfoItem>
               <InfoLabel>{t('CACHE_HIT_RATIO')}</InfoLabel>
-              <InfoValue>{get(detail, 'status.cacheStates.cacheHitRatio', '-')}</InfoValue>
+              <SimpleCircle
+                theme="light"
+                title={t('CACHE_HIT_RATIO')}
+                categories={[t('CACHE_HIT_RATIO')]}
+                value={get(detail, 'status.cacheStates.cacheHitRatio', '-')*100}
+                total={100}
+                showRate
+                
+              />
+            </InfoItem>
+            <InfoItem>
+              <InfoLabel>{t('CACHED')}</InfoLabel>
+              <SimpleCircle
+                theme="light"
+                title={t('CACHED')}
+                categories={[t('CACHED'), t('UFS_TOTAL')]}
+                value={convertUnit(get(detail, 'status.cacheStates.cached', '-'))}
+                total={convertUnit(get(detail, 'status.ufsTotal', '-'))}
+                showRate
+                unit='GiB'
+              />
+            
             </InfoItem>
           </InfoGrid>
           
-          <ProgressWrapper>
-            <ProgressHeader>
-              <ProgressLabel>{t('CACHED')}</ProgressLabel>
-              <ProgressValue>
-                {get(detail, 'status.cacheStates.cached', '-')} 
-                ({get(detail, 'status.cacheStates.cachedPercentage', '0%')})
-              </ProgressValue>
-            </ProgressHeader>
-            <ProgressBar percent={getCachePercentage()} />
-          </ProgressWrapper>
+          
         </Card>
       </CardWrapper>
       
