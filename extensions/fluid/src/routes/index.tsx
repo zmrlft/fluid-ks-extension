@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import App from '../App';
 import DatasetList from '../pages/datasets/list';
 import RuntimeList from '../pages/runtimes/list';
+import DataLoadList from '../pages/dataloads/list';
 import datasetDetailRoutes from '../pages/datasets/detail/routes';
 
 export default [
@@ -18,6 +19,10 @@ export default [
       {
         path: 'runtimes',
         element: <RuntimeList />,
+      },
+      {
+        path: 'dataloads',
+        element: <DataLoadList />,
       },
     ]
   },

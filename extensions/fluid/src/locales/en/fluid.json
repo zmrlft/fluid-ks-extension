@@ -66,5 +66,16 @@
   "RUNTIMES_DESC": "Manage and view Fluid runtime instances that support various distributed cache engines.",
   "MANAGE_RUNTIMES": "Manage Runtimes",
   "NO_RUNTIME_FOUND": "No Runtime Found",
-  "NO_RUNTIME_FOUND_DESC": "There are no runtimes matching your criteria."
+  "NO_RUNTIME_FOUND_DESC": "There are no runtimes matching your criteria.",
+
+  "DATALOADS": "Data Loads",
+  "DATALOAD": "Data Load",
+  "DATALOADS_DESC": "Manage and view data loading tasks that preload data into cache for accelerating data access.",
+  "CREATE_DATALOAD": "Create Data Load",
+  "MANAGE_DATALOADS": "Manage Data Loads",
+  "LOAD_METADATA": "Load Metadata",
+  "DURATION": "Duration",
+  "POLICY": "Policy",
+  "NO_DATALOAD_FOUND": "No Data Load Found",
+  "NO_DATALOAD_FOUND_DESC": "There are no data loads matching your criteria."
 } 
