@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Banner, Card } from '@kubed/components';
-import { Book2Duotone, RocketDuotone, FluentdDuotone } from '@kubed/icons';
+import { Book2Duotone, RocketDuotone, DownloadDuotone } from '@kubed/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -89,6 +89,11 @@ const menuItems = [
     key: 'runtimes',
     icon: <RocketDuotone />,
     label: 'RUNTIMES'
+  },
+  {
+    key: 'dataloads',
+    icon: <DownloadDuotone/>,
+    label: 'DATALOADS'
   }
 ];
 
@@ -102,6 +107,9 @@ export default function App() {
     }
     if (location.pathname.includes('/runtimes')) {
       return 'runtimes';
+    }
+    if (location.pathname.includes('/dataloads')) {
+      return 'dataloads';
     }
     return '';
   }, [location]);
