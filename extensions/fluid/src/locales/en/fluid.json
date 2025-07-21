@@ -12,7 +12,6 @@
   "CACHED": "Cached",
   "CACHE_PERCENTAGE": "Cache Percentage",
   "CACHE_HIT_RATIO": "Cache Hit Ratio",
-  "CACHE_HIT_RATIO": "Cache Hit Ratio",
   "TOTAL_FILES": "Total Files",
   "CREATION_TIME": "Creation Time",
   "SEARCH_BY_NAME": "Search by name",
@@ -77,5 +76,12 @@
   "DURATION": "Duration",
   "POLICY": "Policy",
   "NO_DATALOAD_FOUND": "No Data Load Found",
-  "NO_DATALOAD_FOUND_DESC": "There are no data loads matching your criteria."
-} 
+  "NO_DATALOAD_FOUND_DESC": "There are no data loads matching your criteria.",
+  "RELATIONSHIP": "Relationship",
+  "CONNECTED_TO": "Connected to",
+  "MANAGED_BY": "Managed by",
+  "MOUNTED_AS": "Mounted as",
+  "CONSUME": "Consume",
+  "APPLICATION": "Application",
+  "VARIOUS_PODS": "Various Pods"
+}
