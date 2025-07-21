@@ -52,6 +52,25 @@ const RuntimeList: React.FC = () => {
   const [currentRuntimeType, setCurrentRuntimeType] = useState<number>(0); // 当前选择的 Runtime 类型索引
   const tableRef = useRef<TableRef<any>>(null);
   
+  useEffect(() => {
+    let intervalId: number;
+    
+    if (true) {
+      intervalId = window.setInterval(() => {
+        console.log('执行数据轮询刷新');
+        if (tableRef.current) {
+          tableRef.current.refetch();
+        }
+      }, 15000);
+    }
+    
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [namespace]);
+  
   // 获取所有 namespace
   useEffect(() => {
     const fetchNamespaces = async () => {

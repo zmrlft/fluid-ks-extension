@@ -99,6 +99,26 @@ const DatasetList: React.FC = () => {
   const navigate = useNavigate();
   const tableRef = useRef<TableRef<Dataset>>(null);
   console.log(params,'params');
+  
+  // 添加轮询机制，秒刷新一次
+  useEffect(() => {
+    let intervalId: number;
+    
+    if (true) {
+      intervalId = window.setInterval(() => {
+        console.log('执行数据轮询刷新');
+        if (tableRef.current) {
+          tableRef.current.refetch();
+        }
+      }, 15000);
+    }
+    
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [namespace]);
 
   // 获取所有命名空间
   useEffect(() => {
