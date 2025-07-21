@@ -2,9 +2,11 @@
  * Dataset Resource Status component
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCacheStore as useStore } from '@ks-console/shared';
-import { Card } from '@kubed/components';
+import { Card, Group, Button } from '@kubed/components';
+import { Book2Duotone, RocketDuotone, StorageDuotone, AppstoreDuotone, FolderDuotone } from '@kubed/icons';
 import { get } from 'lodash';
 import styled from 'styled-components';
 import { SimpleCircle } from '@ks-console/shared';
@@ -67,31 +69,85 @@ const InfoValue = styled.div`
   font-size: 14px;
 `;
 
-const TopologyTable = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  
-  th, td {
-    border: 1px solid #e9e9e9;
-    padding: 8px 12px;
-    text-align: left;
+const TopologyContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 24px;
+  background-color: #f9fbfd;
+  border-radius: 8px;
+  min-height: 120px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 16px;
   }
-  
-  th {
-    background-color: #f5f5f5;
-    font-weight: 600;
-    font-size: 12px;
-    color: #242e42;
+`;
+
+const TopologyNode = styled.div<{ clickable?: boolean }>`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background-color: #fff;
+  border: 2px solid #e9e9e9;
+  border-radius: 8px;
+  min-width: 100px;
+  transition: all 0.2s ease;
+
+  ${props => props.clickable && `
+    cursor: pointer;
+
+    &:hover {
+      border-color: #369a6a;
+      box-shadow: 0 2px 8px rgba(54, 154, 106, 0.15);
+      transform: translateY(-2px);
+    }
+  `}
+`;
+
+const TopologyIcon = styled.div`
+  font-size: 24px;
+  color: #369a6a;
+`;
+
+const TopologyLabel = styled.div`
+  font-size: 12px;
+  font-weight: 600;
+  color: #242e42;
+  text-align: center;
+`;
+
+const TopologyName = styled.div`
+  font-size: 14px;
+  color: #242e42;
+  text-align: center;
+  word-break: break-all;
+`;
+
+const TopologyArrow = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+
+  @media (max-width: 768px) {
+    transform: rotate(90deg);
   }
-  
-  td {
-    font-size: 14px;
-    color: #242e42;
-  }
-  
-  tr:nth-child(even) {
-    background-color: #fafafa;
-  }
+`;
+
+const ArrowIcon = styled.div`
+  font-size: 20px;
+  color: #369a6a;
+`;
+
+const ArrowLabel = styled.div`
+  font-size: 10px;
+  color: #79879c;
+  text-align: center;
+  white-space: nowrap;
 `;
 
 const MountCard = styled.div`
@@ -144,8 +200,13 @@ const MountValue = styled.div`
 `;
 
 const ResourceStatus = () => {
+  const navigate = useNavigate();
   const [props] = useStore('DatasetDetailProps');
   const { detail } = props;
+
+  // 卷检测状态
+  const [volumeExists, setVolumeExists] = useState<boolean>(false);
+  const [volumeLoading, setVolumeLoading] = useState<boolean>(false);
 
   // 解析缓存百分比
   const getCachePercentage = () => {
@@ -190,48 +251,174 @@ const ResourceStatus = () => {
     }
   };
 
-  // 备用的拓扑关系表格
-  const renderTopologyTable = () => {
+  // 检测卷是否存在
+  const checkVolumeExists = async (namespace: string, datasetName: string) => {
+    try {
+      setVolumeLoading(true);
+      const volumeName = `${namespace}-${datasetName}`;
+      const response = await fetch('/api/v1/persistentvolumes');
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch persistent volumes: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const exists = data.items?.some((pv: any) => pv.metadata?.name === volumeName) || false;
+      setVolumeExists(exists);
+    } catch (error) {
+      console.error('Failed to check volume existence:', error);
+      setVolumeExists(false);
+    } finally {
+      setVolumeLoading(false);
+    }
+  };
+
+  // 监听数据集变化，检测卷
+  useEffect(() => {
+    const namespace = get(detail, 'metadata.namespace');
+    const datasetName = get(detail, 'metadata.name');
+
+    if (namespace && datasetName) {
+      checkVolumeExists(namespace, datasetName);
+
+      // 设置定时检测
+      const interval = setInterval(() => {
+        checkVolumeExists(namespace, datasetName);
+      }, 30000); // 每30秒检测一次
+
+      return () => clearInterval(interval);
+    }
+  }, [detail]);
+
+  // 处理运行时点击
+  const handleRuntimeClick = (runtime: Runtime) => {
+    // 导航到运行时详情页 - 需要根据实际路由调整
+    const namespace = get(detail, 'metadata.namespace');
+    console.log('Navigating to runtime:', runtime.name, 'in namespace:', namespace);
+    navigate(`/fluid/runtimes/${namespace}/${runtime.name}/resource-status`);
+  };
+
+  // 处理卷点击
+  const handleVolumeClick = () => {
+    const namespace = get(detail, 'metadata.namespace');
+    const datasetName = get(detail, 'metadata.name');
+    const volumeName = `${namespace}-${datasetName}`;
+    console.log('Navigating to volume:', volumeName);
+    navigate(`/clusters/host/pv/${volumeName}/resource-status`);
+  };
+
+  // 新的拓扑图可视化
+  const renderTopologyGraph = () => {
     const datasetName = detail.metadata?.name || 'dataset';
-    const runtimes = get(detail, 'spec.runtimes', []) as Runtime[];
+    const namespace = detail.metadata?.namespace || 'default';
+    const runtimes = get(detail, 'status.runtimes', []) as Runtime[];
     const mounts = get(detail, 'spec.mounts', []) as Mount[];
+    const volumeName = `${namespace}-${datasetName}`;
+    console.log("detail",detail)
 
     return (
-      <TopologyTable>
-        <thead>
-          <tr>
-            <th>{t('TYPE')}</th>
-            <th>{t('NAME')}</th>
-            <th>{t('RELATIONSHIP')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Dataset</td>
-            <td>{datasetName}</td>
-            <td>-</td>
-          </tr>
-          {mounts.map((mount, index) => (
-            <tr key={`mount-${index}`}>
-              <td>{t('DATA_SOURCE')}</td>
-              <td>{mount.mountPoint}</td>
-              <td>{t('CONNECTED_TO')} {datasetName}</td>
-            </tr>
-          ))}
-          {runtimes.map((runtime, index) => (
-            <tr key={`runtime-${index}`}>
-              <td>Runtime ({runtime.type})</td>
-              <td>{runtime.name}</td>
-              <td>{t('MANAGED_BY')} {datasetName}</td>
-            </tr>
-          ))}
-          <tr>
-            <td>{t('APPLICATION')}</td>
-            <td>{t('VARIOUS_PODS')}</td>
-            <td>{t('CONSUME')} {datasetName}</td>
-          </tr>
-        </tbody>
-      </TopologyTable>
+      <TopologyContainer>
+        {/* 数据源节点 */}
+        {mounts.length > 0 && (
+          <>
+            <TopologyNode>
+              <TopologyIcon>
+                <FolderDuotone size={24} />
+              </TopologyIcon>
+              <TopologyLabel>{t('DATA_SOURCE')}</TopologyLabel>
+              <TopologyName>{mounts[0].mountPoint}</TopologyName>
+            </TopologyNode>
+            <TopologyArrow>
+              <ArrowIcon>→</ArrowIcon>
+              <ArrowLabel>{t('CONNECTED_TO')}</ArrowLabel>
+            </TopologyArrow>
+          </>
+        )}
+
+        {/* 数据集节点 */}
+        <TopologyNode>
+          <TopologyIcon>
+            <Book2Duotone size={24} />
+          </TopologyIcon>
+          <TopologyLabel>Dataset</TopologyLabel>
+          <TopologyName>{datasetName}</TopologyName>
+        </TopologyNode>
+
+        {/* 运行时节点 */}
+        {runtimes.length > 0 ? (
+          <>
+            <TopologyArrow>
+              <ArrowIcon>→</ArrowIcon>
+              <ArrowLabel>{t('MANAGED_BY')}</ArrowLabel>
+            </TopologyArrow>
+            <TopologyNode clickable onClick={() => handleRuntimeClick(runtimes[0])}>
+              <TopologyIcon>
+                <RocketDuotone size={24} />
+              </TopologyIcon>
+              <TopologyLabel>Runtime ({runtimes[0].type})</TopologyLabel>
+              <TopologyName>{runtimes[0].name}</TopologyName>
+            </TopologyNode>
+          </>
+        ) : (
+          <>
+            <TopologyArrow>
+              <ArrowIcon>→</ArrowIcon>
+              <ArrowLabel>{t('MANAGED_BY')}</ArrowLabel>
+            </TopologyArrow>
+            <TopologyNode>
+              <TopologyIcon>
+                <RocketDuotone size={24} />
+              </TopologyIcon>
+              <TopologyLabel>Runtime</TopologyLabel>
+              <TopologyName>未配置</TopologyName>
+            </TopologyNode>
+          </>
+        )}
+
+        {/* 卷节点 */}
+        {volumeLoading ? (
+          <>
+            <TopologyArrow>
+              <ArrowIcon>→</ArrowIcon>
+              <ArrowLabel>{t('MOUNTED_AS')}</ArrowLabel>
+            </TopologyArrow>
+            <TopologyNode>
+              <TopologyIcon>
+                <StorageDuotone size={24} />
+              </TopologyIcon>
+              <TopologyLabel>Volume</TopologyLabel>
+              <TopologyName>检测中...</TopologyName>
+            </TopologyNode>
+          </>
+        ) : volumeExists ? (
+          <>
+            <TopologyArrow>
+              <ArrowIcon>→</ArrowIcon>
+              <ArrowLabel>{t('MOUNTED_AS')}</ArrowLabel>
+            </TopologyArrow>
+            <TopologyNode clickable onClick={handleVolumeClick}>
+              <TopologyIcon>
+                <StorageDuotone size={24} />
+              </TopologyIcon>
+              <TopologyLabel>Volume</TopologyLabel>
+              <TopologyName>{volumeName}</TopologyName>
+            </TopologyNode>
+          </>
+        ) : null}
+
+        {/* 应用节点 */}
+        <TopologyArrow>
+          <ArrowIcon>→</ArrowIcon>
+          <ArrowLabel>{t('CONSUME')}</ArrowLabel>
+        </TopologyArrow>
+        <TopologyNode>
+          <TopologyIcon>
+            <AppstoreDuotone size={24} />
+          </TopologyIcon>
+          <TopologyLabel>{t('APPLICATION')}</TopologyLabel>
+          <TopologyName>{t('VARIOUS_PODS')}</TopologyName>
+        </TopologyNode>
+      </TopologyContainer>
     );
   };
 
@@ -307,7 +494,7 @@ const ResourceStatus = () => {
       {/* 数据集拓扑图卡片 */}
       <CardWrapper>
         <Card sectionTitle={t('DATASET_TOPOLOGY')}>
-          {renderTopologyTable()}
+          {renderTopologyGraph()}
         </Card>
       </CardWrapper>
       

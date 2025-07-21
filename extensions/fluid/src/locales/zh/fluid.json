@@ -76,5 +76,12 @@
   "DURATION": "持续时间",
   "POLICY": "策略",
   "NO_DATALOAD_FOUND": "未找到数据加载",
-  "NO_DATALOAD_FOUND_DESC": "当前没有符合条件的数据加载任务。"
-} 
+  "NO_DATALOAD_FOUND_DESC": "当前没有符合条件的数据加载任务。",
+  "RELATIONSHIP": "关系",
+  "CONNECTED_TO": "连接到",
+  "MANAGED_BY": "管理者",
+  "MOUNTED_AS": "挂载为",
+  "CONSUME": "消费",
+  "APPLICATION": "应用",
+  "VARIOUS_PODS": "各种容器组"
+}
