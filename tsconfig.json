@@ -6,8 +6,25 @@
     "noFallthroughCasesInSwitch": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    // "isolatedModules": false,
-    "noEmit": false
+    "skipLibCheck": false,
+    "noEmit": true,
+    "outDir": "./dist",
+    "declaration": false,
+    "declarationMap": false,
+    "types": ["node", "webpack-env"],
+    "typeRoots": ["./node_modules/@types"]
   },
-  "include": ["extensions", "types"]
+  "include": ["extensions", "types"],
+  "exclude": [
+    "node_modules",
+    "**/dist/**",
+    "**/lib/**",
+    "**/esm/**",
+    "**/cjs/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/v3dist/**",
+    "extensions/fluid/dist/**",
+    "extensions/fluid/src/locales/**/index.js"
+  ]
 }
