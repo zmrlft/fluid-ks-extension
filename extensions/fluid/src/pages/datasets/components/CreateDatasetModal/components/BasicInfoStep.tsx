@@ -326,7 +326,7 @@ const BasicInfoStep: React.FC<StepComponentProps> = ({
           />
         </div>
 
-        <div style={{ marginBottom: '16px' }}>
+        <div style={{ marginBottom: '16px', display: 'none' }}>
           <FieldLabel>
             {t('LABELS')}
           </FieldLabel>
