@@ -11,19 +11,6 @@ const StepContainer = styled.div`
   min-height: 400px;
 `;
 
-const StepTitle = styled.h3`
-  font-size: 16px;
-  font-weight: 600;
-  color: #242e42;
-  margin-bottom: 8px;
-`;
-
-const StepDescription = styled.p`
-  font-size: 14px;
-  color: #79879c;
-  margin-bottom: 24px;
-`;
-
 const MountItem = styled.div`
   border: 1px solid #e3e9ef;
   border-radius: 4px;
@@ -283,7 +270,7 @@ const DataSourceStep: React.FC<StepComponentProps> = ({
             </Col>
           </Row>
 
-          <OptionsContainer>
+          <OptionsContainer style={{ display: 'none' }}>
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
                 {t('OPTIONS')}
