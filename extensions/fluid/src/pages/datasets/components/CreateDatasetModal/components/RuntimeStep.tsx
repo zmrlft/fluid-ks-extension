@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Input, Select, InputNumber, Row, Col, Alert } from '@kubed/components';
 import { StepComponentProps, RUNTIME_TYPE_OPTIONS, MEDIUM_TYPE_OPTIONS } from '../types';
 import styled from 'styled-components';
-import { Trash } from '@kubed/icons';
+import { Add, Trash } from '@kubed/icons';
 
 declare const t: (key: string, options?: any) => string;
 
@@ -42,6 +42,26 @@ const RemoveButton = styled.button`
   
   &:hover {
     background-color: #fff2f2;
+  }
+`;
+
+const AddTieredStoreLevelButton = styled.button`
+  background: none;
+  border: 1px dashed #d8dee5;
+  color: #3385ff;
+  padding: 12px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  
+  &:hover {
+    border-color: #3385ff;
+    background-color: #f8faff;
   }
 `;
 
@@ -276,7 +296,12 @@ const RuntimeStep: React.FC<StepComponentProps> = ({
           </TieredStoreItem>
         ))}
 
-        <button
+        <AddTieredStoreLevelButton onClick={addTieredStoreLevel}>
+          <Add size={16} />
+          {t('ADD_STORAGE_LEVEL')}
+        </AddTieredStoreLevelButton>
+
+        {/* <button
           type="button"
           onClick={addTieredStoreLevel}
           style={{
@@ -291,7 +316,7 @@ const RuntimeStep: React.FC<StepComponentProps> = ({
           }}
         >
           + {t('ADD_STORAGE_LEVEL')}
-        </button>
+        </button> */}
       </div>
     </StepContainer>
   );
