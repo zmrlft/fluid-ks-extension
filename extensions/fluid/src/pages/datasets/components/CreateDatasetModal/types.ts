@@ -15,7 +15,7 @@ export interface DatasetFormData {
   
   // 运行时配置
   runtimeType: RuntimeType;
-  runtimeName: string; // 自动设置为数据集名称（fluid官网里提到dataset和runtime名称要一样）
+  runtimeName: string; // 自动设置为数据集名称（fluid官网里的视频提到dataset和runtime名称要一样）
   replicas: number;
   // 对应的是runtime的crd字段是：
   // spec:
@@ -51,7 +51,7 @@ export interface DatasetFormData {
   mounts?: Array<{
     mountPoint: string;
     name: string;
-    path: string;//这个可以不要，在fluid的api文档中提到The path of mount, if not set will be /{Name}
+    path?: string; // 挂载路径，如果不设置将是 /{Name}
     readOnly?: boolean;
     shared?: boolean;
     options?: Record<string, string>;
