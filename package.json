@@ -34,7 +34,8 @@
     "@kubed/diff-viewer": "^0.2.21",
     "@kubed/hooks": "^0.2.21",
     "@kubed/icons": "^0.2.21",
-    "@kubed/log-viewer": "^0.2.21"
+    "@kubed/log-viewer": "^0.2.21",
+    "js-yaml": "^4.1.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.15.7",

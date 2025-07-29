@@ -6,6 +6,7 @@ import { DataTable, TableRef } from '@ks-console/shared';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Book2Duotone } from '@kubed/icons';
 import { transformRequestParams } from '../../../utils';
+import CreateDatasetModal from '../components/CreateDatasetModal';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -95,6 +96,7 @@ const DatasetList: React.FC = () => {
   const [namespaces, setNamespaces] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [createModalVisible, setCreateModalVisible] = useState<boolean>(false);
   const params: Record<string, any> = useParams();
   const navigate = useNavigate();
   const tableRef = useRef<TableRef<Dataset>>(null);
@@ -159,9 +161,15 @@ const DatasetList: React.FC = () => {
   
   // 创建数据集按钮点击处理
   const handleCreateDataset = () => {
-    // 暂时实现为提示信息
-    console.log('创建数据集功能待实现');
-    alert(t('CREATE_DATASET_DESC') || '创建数据集功能待实现');
+    setCreateModalVisible(true);
+  };
+
+  // 创建数据集成功处理
+  const handleCreateSuccess = () => {
+    // 刷新表格数据
+    if (tableRef.current) {
+      tableRef.current.refetch();
+    }
   };
 
   // 刷新表格数据
@@ -318,6 +326,12 @@ const DatasetList: React.FC = () => {
           />
         )}
       </StyledCard>
+
+      <CreateDatasetModal
+        visible={createModalVisible}
+        onCancel={() => setCreateModalVisible(false)}
+        onSuccess={handleCreateSuccess}
+      />
     </div>
   );
 };
