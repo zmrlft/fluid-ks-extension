@@ -202,6 +202,7 @@ const RuntimeStep: React.FC<StepComponentProps> = ({
                 placeholder={t('SELECT_RUNTIME_TYPE')}
                 value={formValues.runtimeType}
                 onChange={(value) => handleFormChange('runtimeType', value)}
+                style={{ width: '90%' }}
               >
                 {RUNTIME_TYPE_OPTIONS.map(option => (
                   <Select.Option key={option.value} value={option.value}>
