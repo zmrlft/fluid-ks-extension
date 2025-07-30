@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { get } from 'lodash';
-import { Button, Card, Banner, Select, Empty } from '@kubed/components';
+import { Button, Card, Banner, Select, Empty, Checkbox, notify } from '@kubed/components';
 import { DataTable, TableRef } from '@ks-console/shared';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Book2Duotone } from '@kubed/icons';
@@ -97,6 +97,9 @@ const DatasetList: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [createModalVisible, setCreateModalVisible] = useState<boolean>(false);
+  const [selectedDatasets, setSelectedDatasets] = useState<Dataset[]>([]);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [currentPageData, setCurrentPageData] = useState<Dataset[]>([]);
   const params: Record<string, any> = useParams();
   const navigate = useNavigate();
   const tableRef = useRef<TableRef<Dataset>>(null);
@@ -129,11 +132,11 @@ const DatasetList: React.FC = () => {
         setIsLoading(true);
         setError(null);
         const response = await fetch('/api/v1/namespaces');
-        
+
         if (!response.ok) {
           throw new Error(`${response.status}: ${response.statusText}`);
         }
-        
+
         const data = await response.json();
         if (data && data.items) {
           const namespaceList = data.items.map((item: any) => item.metadata.name);
@@ -148,6 +151,12 @@ const DatasetList: React.FC = () => {
     };
     fetchNamespaces();
   }, []);
+
+  // 当命名空间变化时，清空选择状态和当前页面数据
+  useEffect(() => {
+    setSelectedDatasets([]);
+    setCurrentPageData([]);
+  }, [namespace]);
 
   // 处理命名空间变更
   const handleNamespaceChange = (value: string) => {
@@ -179,15 +188,142 @@ const DatasetList: React.FC = () => {
     }
   };
 
+  // 处理单个数据集选择
+  const handleSelectDataset = (dataset: Dataset, checked: boolean) => {
+    if (checked) {
+      setSelectedDatasets(prev => [...prev, dataset]);
+    } else {
+      const datasetUid = get(dataset, 'metadata.uid', '');
+      setSelectedDatasets(prev => prev.filter(item => get(item, 'metadata.uid', '') !== datasetUid));
+    }
+  };
+
+  // 处理全选/取消全选
+  const handleSelectAll = (checked: boolean) => {
+    if (!checked) {
+      // 取消全选
+      setSelectedDatasets([]);
+    } else {
+      // 全选：由于无法直接获取表格数据，我们使用一个变通方法
+      // 通过 API 获取当前页面的数据集
+      fetchCurrentPageDatasets();
+    }
+  };
+
+  // 获取当前页面的数据集用于全选
+  const fetchCurrentPageDatasets = async () => {
+    try {
+      const url = namespace
+        ? `/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets`
+        : '/kapis/data.fluid.io/v1alpha1/datasets';
+
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.items) {
+          const formattedDatasets = data.items.map(formatDataset);
+          setCurrentPageData(formattedDatasets);
+          setSelectedDatasets(formattedDatasets);
+        }
+      }
+    } catch (error) {
+      console.error('获取数据集列表失败:', error);
+    }
+  };
+
+  // 检查全选状态
+  const isAllSelected = currentPageData.length > 0 && selectedDatasets.length === currentPageData.length;
+  const isIndeterminate = selectedDatasets.length > 0 && selectedDatasets.length < currentPageData.length;
+
+
+
+  // 删除单个数据集
+  const deleteDataset = async (name: string, namespace: string) => {
+    try {
+      const response = await fetch(`/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets/${name}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error(`删除失败: ${response.status} ${response.statusText}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('删除数据集失败:', error);
+      throw error;
+    }
+  };
+
+  // 批量删除数据集
+  const handleBatchDelete = async () => {
+    if (selectedDatasets.length === 0) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `确定要删除选中的 ${selectedDatasets.length} 个数据集吗？此操作不可撤销。删除操作不会立马成功，请等待一会重新刷新表格`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      // 并行删除所有选中的数据集
+      const deletePromises = selectedDatasets.map(dataset =>
+        deleteDataset(
+          get(dataset, 'metadata.name', ''),
+          get(dataset, 'metadata.namespace', '')
+        )
+      );
+
+      await Promise.all(deletePromises);
+
+      notify.success(`成功删除 ${selectedDatasets.length} 个数据集`);
+      setSelectedDatasets([]);
+      handleRefresh();
+    } catch (error) {
+      console.error('批量删除失败:', error);
+      notify.error('删除数据集失败，请重试');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // 根据CRD定义完善表格列
   const columns = [
+    {
+      title: (
+        <Checkbox
+          checked={isAllSelected}
+          indeterminate={isIndeterminate}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            handleSelectAll(e.target.checked);
+          }}
+        />
+      ),
+      field: 'selection',
+      width: '50px',
+      render: (_: any, record: Dataset) => {
+        const datasetUid = get(record, 'metadata.uid', '');
+        const isSelected = selectedDatasets.some(item => get(item, 'metadata.uid', '') === datasetUid);
+        return (
+          <Checkbox
+            checked={isSelected}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSelectDataset(record, e.target.checked)}
+          />
+        );
+      },
+    },
     {
       title: t('NAME'),
       field: 'metadata.name',
       width: '15%',
       searchable: true,
-      render: (value: any, record: Dataset) => (
-        <a 
+      render: (_: any, record: Dataset) => (
+        <a
           onClick={(e) => {
             e.preventDefault();
             handleNameClick(get(record, 'metadata.name', ''), get(record, 'metadata.namespace', 'default'));
@@ -203,7 +339,7 @@ const DatasetList: React.FC = () => {
       field: 'metadata.namespace',
       width: '10%',
       canHide: true,
-      render: (value: any, record: Dataset) => <span>{get(record, 'metadata.namespace', '-')}</span>,
+      render: (_: any, record: Dataset) => <span>{get(record, 'metadata.namespace', '-')}</span>,
     },
     {
       title: t('STATUS'),
@@ -211,7 +347,7 @@ const DatasetList: React.FC = () => {
       width: '10%',
       canHide: true,
       searchable: true,
-      render: (value: any, record: Dataset) => <span>{get(record, 'status.phase', '-')}</span>,
+      render: (_: any, record: Dataset) => <span>{get(record, 'status.phase', '-')}</span>,
     },
     {
       title: t('DATA_SOURCE'),
@@ -219,7 +355,7 @@ const DatasetList: React.FC = () => {
       width: '20%',
       canHide: true,
       searchable: true,
-      render: (value: any, record: Dataset) => {
+      render: (_: any, record: Dataset) => {
         const mountPoint = get(record, 'spec.mounts[0].mountPoint', '-');
         return <span>{mountPoint}</span>;
       },
@@ -230,7 +366,7 @@ const DatasetList: React.FC = () => {
       width: '10%',
       sortable: true,
       canHide: true,
-      render: (value: any, record: Dataset) => <span>{get(record, 'status.ufsTotal', '-')}</span>,
+      render: (_: any, record: Dataset) => <span>{get(record, 'status.ufsTotal', '-')}</span>,
     },
     {
       title: t('CACHE_CAPACITY'),
@@ -238,7 +374,7 @@ const DatasetList: React.FC = () => {
       width: '10%',
       sortable: true,
       canHide: true,
-      render: (value: any, record: Dataset) => <span>{get(record, 'status.cacheStates.cacheCapacity', '-')}</span>,
+      render: (_: any, record: Dataset) => <span>{get(record, 'status.cacheStates.cacheCapacity', '-')}</span>,
     },
     {
       title: t('CACHED'),
@@ -246,7 +382,7 @@ const DatasetList: React.FC = () => {
       width: '10%',
       sortable: true,
       canHide: true,
-      render: (value: any, record: Dataset) => <span>{get(record, 'status.cacheStates.cached', '-')}</span>,
+      render: (_: any, record: Dataset) => <span>{get(record, 'status.cacheStates.cached', '-')}</span>,
     },
     {
       title: t('CACHE_PERCENTAGE'),
@@ -254,7 +390,7 @@ const DatasetList: React.FC = () => {
       width: '10%',
       sortable: true,
       canHide: true,
-      render: (value: any, record: Dataset) => <span>{get(record, 'status.cacheStates.cachedPercentage', '0%')}</span>,
+      render: (_: any, record: Dataset) => <span>{get(record, 'status.cacheStates.cachedPercentage', '0%')}</span>,
     },
     {
       title: t('CREATION_TIME'),
@@ -262,7 +398,7 @@ const DatasetList: React.FC = () => {
       width: '10%',
       sortable: true,
       canHide: true,
-      render: (value: any, record: Dataset) => <span>{get(record, 'metadata.creationTimestamp', '-')}</span>,
+      render: (_: any, record: Dataset) => <span>{get(record, 'metadata.creationTimestamp', '-')}</span>,
     },
   ] as any;
 
@@ -299,6 +435,10 @@ const DatasetList: React.FC = () => {
               url: namespace
               ? `/clusters/host/apis/data.fluid.io/v1alpha1/watch/namespaces/${namespace}/datasets?watch=true`
               : `/clusters/host/apis/data.fluid.io/v1alpha1/watch/datasets?watch=true`,
+              onAddedOrDeleted: () => {
+                // 当数据变化时，清空选择状态以避免选中已删除的数据集
+                setSelectedDatasets([]);
+              }
             }}
             toolbarLeft={
               <ToolbarWrapper>
@@ -319,9 +459,21 @@ const DatasetList: React.FC = () => {
               </ToolbarWrapper>
             }
             toolbarRight={
-              <Button onClick={handleCreateDataset} style={{ marginLeft: '16px' }}>
-                {t('CREATE_DATASET')}
-              </Button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {selectedDatasets.length > 0 && (
+                  <Button
+                    color="error"
+                    onClick={handleBatchDelete}
+                    loading={isDeleting}
+                    style={{ marginRight: '8px' }}
+                  >
+                    {t('DELETE')} ({selectedDatasets.length})
+                  </Button>
+                )}
+                <Button onClick={handleCreateDataset}>
+                  {t('CREATE_DATASET')}
+                </Button>
+              </div>
             }
           />
         )}
