@@ -466,10 +466,16 @@ const ResourceStatus = () => {
                 theme="light"
                 title={t('CACHE_HIT_RATIO')}
                 categories={[t('CACHE_HIT_RATIO')]}
-                value={get(detail, 'status.cacheStates.cacheHitRatio', '-')*100}
+                value={(() => {
+                  const ratio = get(detail, 'status.cacheStates.cacheHitRatio', 0);
+                  if (ratio === '-' || ratio === null || ratio === undefined) return 0;
+                  // 如果是小数形式(0-1)，转换为百分比(0-100)
+                  const numRatio = typeof ratio === 'string' ? parseFloat(ratio) : ratio;
+                  return numRatio <= 1 ? numRatio * 100 : numRatio;
+                })()}
                 total={100}
                 showRate
-                
+                unit='%'
               />
             </InfoItem>
             <InfoItem>
