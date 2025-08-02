@@ -27,13 +27,12 @@ interface RuntimeItem {
   name: string;
   namespace: string;
   type: string; // runtime 类型，如 Alluxio、EFC 等
-  status: string;
   masterReplicas: string | number;
   workerReplicas: string | number;
   creationTimestamp: string;
-  cacheCapacity: string;
-  cached: string;
-  cachedPercentage: string;
+  masterPhase: string;
+  workerPhase: string;
+  fusePhase: string;
   raw: any; // 原始数据
   metadata: {
     name: string;
@@ -135,16 +134,12 @@ const RuntimeList: React.FC = () => {
       name: get(item, 'metadata.name', ''),
       namespace: get(item, 'metadata.namespace', ''),
       type: typeMeta.displayName,
-      status: get(item, 'status.phase', get(item, 'status.state', '-')),
       masterReplicas: get(item, 'spec.master.replicas', get(item, 'spec.replicas', '-')),
       workerReplicas: get(item, 'spec.worker.replicas', get(item, 'spec.replicas', '-')),
       creationTimestamp: get(item, 'metadata.creationTimestamp', ''),
-      cacheCapacity: get(item, 'status.cacheStates.cacheCapacity', 
-                      get(item, 'status.cacheCapacity', '-')),
-      cached: get(item, 'status.cacheStates.cached', 
-              get(item, 'status.cached', '-')),
-      cachedPercentage: get(item, 'status.cacheStates.cachedPercentage', 
-                        get(item, 'status.cachedPercentage', '0%')),
+      masterPhase: get(item, 'status.masterPhase', '-'),
+      workerPhase: get(item, 'status.workerPhase', '-'),
+      fusePhase: get(item, 'status.fusePhase', '-'),
       raw: item,
       metadata: {
         name: get(item, 'metadata.name', ''),
@@ -162,7 +157,7 @@ const RuntimeList: React.FC = () => {
       width: '15%',
       searchable: true,
       render: (value: string, record: RuntimeItem) => (
-        <a 
+        <a
           onClick={(e) => {
             e.preventDefault();
             handleNameClick(record.name, record.namespace);
@@ -176,7 +171,7 @@ const RuntimeList: React.FC = () => {
     {
       title: t('NAMESPACE'),
       field: 'namespace',
-      width: '10%',
+      width: '12%',
       canHide: true,
     },
     {
@@ -186,48 +181,39 @@ const RuntimeList: React.FC = () => {
       canHide: true,
     },
     {
-      title: t('STATUS'),
-      field: 'status',
-      width: '10%',
-      canHide: true,
-    },
-    {
       title: 'Master Replicas',
       field: 'masterReplicas',
-      width: '15%',
+      width: '12%',
       canHide: true,
     },
     {
       title: 'Worker Replicas',
       field: 'workerReplicas',
-      width: '15%',
+      width: '12%',
+      canHide: true,
+    },
+    {
+      title: 'MASTER PHASE',
+      field: 'masterPhase',
+      width: '13%',
+      canHide: true,
+    },
+    {
+      title: 'WORKER PHASE',
+      field: 'workerPhase',
+      width: '13%',
+      canHide: true,
+    },
+    {
+      title: 'FUSE PHASE',
+      field: 'fusePhase',
+      width: '13%',
       canHide: true,
     },
     {
       title: t('CREATION_TIME'),
       field: 'creationTimestamp',
       width: '15%',
-      canHide: true,
-      sortable: true,
-    },
-    {
-      title: t('CACHE_CAPACITY'),
-      field: 'cacheCapacity',
-      width: '15%',
-      canHide: true,
-      sortable: true,
-    },
-    {
-      title: t('CACHED'),
-      field: 'cached',
-      width: '10%',
-      canHide: true,
-      sortable: true,
-    },
-    {
-      title: t('CACHE_PERCENTAGE'),
-      field: 'cachedPercentage',
-      width: '10%',
       canHide: true,
       sortable: true,
     },
