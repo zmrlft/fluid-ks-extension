@@ -8,6 +8,7 @@ import { Loading, Button } from '@kubed/components';
 import { useCacheStore as useStore } from '@ks-console/shared';
 import { DetailPagee } from '@ks-console/shared';
 import { get } from 'lodash';
+import { Book2Duotone } from '@kubed/icons';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -234,7 +235,7 @@ const DatasetDetail: React.FC = () => {
               label: t('DATASETS'),
               url: listUrl,
             },
-            icon: 'dataset',
+            icon: <Book2Duotone size={24}/>
           }}
         />
       )}
