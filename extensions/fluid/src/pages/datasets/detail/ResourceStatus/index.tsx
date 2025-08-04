@@ -2,11 +2,10 @@
  * Dataset Resource Status component
  */
 
-import React, { useMemo, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { useCacheStore as useStore } from '@ks-console/shared';
-import { Card, Group, Button } from '@kubed/components';
-import { Book2Duotone, RocketDuotone, StorageDuotone, AppstoreDuotone, FolderDuotone } from '@kubed/icons';
+import { Card } from '@kubed/components';
+import { Book2Duotone, RocketDuotone, StorageDuotone, AppstoreDuotone, FolderDuotone, DatabaseSealDuotone } from '@kubed/icons';
 import { get } from 'lodash';
 import styled from 'styled-components';
 import { SimpleCircle } from '@ks-console/shared';
@@ -200,13 +199,16 @@ const MountValue = styled.div`
 `;
 
 const ResourceStatus = () => {
-  const navigate = useNavigate();
   const [props] = useStore('DatasetDetailProps');
   const { detail } = props;
 
   // 卷检测状态
   const [volumeExists, setVolumeExists] = useState<boolean>(false);
   const [volumeLoading, setVolumeLoading] = useState<boolean>(false);
+
+  // PVC检测状态
+  const [pvcExists, setPvcExists] = useState<boolean>(false);
+  const [pvcLoading, setPvcLoading] = useState<boolean>(false);
 
   // 解析缓存百分比
   const getCachePercentage = () => {
@@ -273,17 +275,40 @@ const ResourceStatus = () => {
     }
   };
 
-  // 监听数据集变化，检测卷
+  // 检测PVC是否存在
+  const checkPvcExists = async (namespace: string, datasetName: string) => {
+    try {
+      setPvcLoading(true);
+      const response = await fetch(`/api/v1/namespaces/${namespace}/persistentvolumeclaims`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch persistent volume claims: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const exists = data.items?.some((pvc: any) => pvc.metadata?.name === datasetName) || false;
+      setPvcExists(exists);
+    } catch (error) {
+      console.error('Failed to check PVC existence:', error);
+      setPvcExists(false);
+    } finally {
+      setPvcLoading(false);
+    }
+  };
+
+  // 监听数据集变化，检测卷和PVC
   useEffect(() => {
     const namespace = get(detail, 'metadata.namespace');
     const datasetName = get(detail, 'metadata.name');
 
     if (namespace && datasetName) {
       checkVolumeExists(namespace, datasetName);
+      checkPvcExists(namespace, datasetName);
 
       // 设置定时检测
       const interval = setInterval(() => {
         checkVolumeExists(namespace, datasetName);
+        checkPvcExists(namespace, datasetName);
       }, 30000); // 每30秒检测一次
 
       return () => clearInterval(interval);
@@ -292,10 +317,11 @@ const ResourceStatus = () => {
 
   // 处理运行时点击
   const handleRuntimeClick = (runtime: Runtime) => {
-    // 导航到运行时详情页 - 需要根据实际路由调整
+    // 导航到运行时详情页 - 在新窗口中打开
     const namespace = get(detail, 'metadata.namespace');
-    console.log('Navigating to runtime:', runtime.name, 'in namespace:', namespace);
-    navigate(`/fluid/runtimes/${namespace}/${runtime.name}/resource-status`);
+    const url = `/fluid/runtimes/${namespace}/${runtime.name}/resource-status`;
+    console.log('Opening runtime in new window:', runtime.name, 'in namespace:', namespace);
+    window.open(url, '_blank');
   };
 
   // 处理卷点击
@@ -303,8 +329,19 @@ const ResourceStatus = () => {
     const namespace = get(detail, 'metadata.namespace');
     const datasetName = get(detail, 'metadata.name');
     const volumeName = `${namespace}-${datasetName}`;
-    console.log('Navigating to volume:', volumeName);
-    navigate(`/clusters/host/pv/${volumeName}/resource-status`);
+    const url = `/clusters/host/pv/${volumeName}/resource-status`;
+    console.log('Opening volume in new window:', volumeName);
+    window.open(url, '_blank');
+  };
+
+  // 处理PVC点击
+  const handlePVCClick = () => {
+    const namespace = get(detail, 'metadata.namespace');
+    const datasetName = get(detail, 'metadata.name');
+    // 根据提供的路径格式: /clusters/host/projects/{namespace}/volumes/{pvcName}/resource-status
+    const url = `/clusters/host/projects/${namespace}/volumes/${datasetName}/resource-status`;
+    console.log('Opening PVC in new window:', datasetName, 'in namespace:', namespace);
+    window.open(url, '_blank');
   };
 
   // 新的拓扑图可视化
@@ -371,6 +408,51 @@ const ResourceStatus = () => {
               </TopologyIcon>
               <TopologyLabel>Runtime</TopologyLabel>
               <TopologyName>未配置</TopologyName>
+            </TopologyNode>
+          </>
+        )}
+
+        {/* PVC节点 */}
+        {pvcLoading ? (
+          <>
+            <TopologyArrow>
+              <ArrowIcon>→</ArrowIcon>
+              <ArrowLabel>{t('CREATES')}</ArrowLabel>
+            </TopologyArrow>
+            <TopologyNode>
+              <TopologyIcon>
+                <DatabaseSealDuotone size={24} />
+              </TopologyIcon>
+              <TopologyLabel>PVC</TopologyLabel>
+              <TopologyName>检测中...</TopologyName>
+            </TopologyNode>
+          </>
+        ) : pvcExists ? (
+          <>
+            <TopologyArrow>
+              <ArrowIcon>→</ArrowIcon>
+              <ArrowLabel>{t('CREATES')}</ArrowLabel>
+            </TopologyArrow>
+            <TopologyNode clickable onClick={handlePVCClick}>
+              <TopologyIcon>
+                <DatabaseSealDuotone size={24} />
+              </TopologyIcon>
+              <TopologyLabel>PVC</TopologyLabel>
+              <TopologyName>{datasetName}</TopologyName>
+            </TopologyNode>
+          </>
+        ) : (
+          <>
+            <TopologyArrow>
+              <ArrowIcon>→</ArrowIcon>
+              <ArrowLabel>{t('CREATES')}</ArrowLabel>
+            </TopologyArrow>
+            <TopologyNode>
+              <TopologyIcon>
+                <DatabaseSealDuotone size={24} />
+              </TopologyIcon>
+              <TopologyLabel>PVC</TopologyLabel>
+              <TopologyName>未创建</TopologyName>
             </TopologyNode>
           </>
         )}
