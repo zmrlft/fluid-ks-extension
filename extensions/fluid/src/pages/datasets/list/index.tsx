@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styled from 'styled-components';
-import { get } from 'lodash';
+import { get, debounce } from 'lodash';
 import { Button, Card, Banner, Select, Empty, Checkbox, notify } from '@kubed/components';
-import { DataTable, TableRef } from '@ks-console/shared';
+import { DataTable, TableRef, StatusIndicator } from '@ks-console/shared';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Book2Duotone } from '@kubed/icons';
 import { transformRequestParams } from '../../../utils';
@@ -100,6 +100,8 @@ const DatasetList: React.FC = () => {
   const [selectedDatasets, setSelectedDatasets] = useState<Dataset[]>([]);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [currentPageData, setCurrentPageData] = useState<Dataset[]>([]);
+  const [previousDataLength, setPreviousDataLength] = useState<number>(0);
+  const [wsConnected, setWsConnected] = useState<boolean>(false);
   const params: Record<string, any> = useParams();
   const navigate = useNavigate();
   const tableRef = useRef<TableRef<Dataset>>(null);
@@ -109,7 +111,7 @@ const DatasetList: React.FC = () => {
   useEffect(() => {
     let intervalId: number;
     
-    if (true) {
+    if (false) {
       intervalId = window.setInterval(() => {
         console.log('执行数据轮询刷新');
         if (tableRef.current) {
@@ -158,6 +160,160 @@ const DatasetList: React.FC = () => {
     setCurrentPageData([]);
   }, [namespace]);
 
+  // 监听数据变化，当数据集数量发生变化时清空选择状态
+  const handleDataChange = (newData: Dataset[]) => {
+    console.log("=== handleDataChange 被调用 ===");
+    console.log("数据变化检测:", {
+      previousLength: previousDataLength,
+      newLength: newData?.length || 0,
+      newData: newData
+    });
+
+    if (newData && previousDataLength > 0 && newData.length !== previousDataLength) {
+      console.log("检测到数据集数量变化，清空选择状态");
+      setSelectedDatasets([]);
+    }
+
+    setPreviousDataLength(newData?.length || 0);
+    setCurrentPageData(newData || []);
+  };
+
+
+
+  // 创建防抖的刷新函数，1000ms内最多执行一次
+  const debouncedRefresh = debounce(() => {
+    console.log("=== 执行防抖刷新 ===");
+    if (tableRef.current) {
+      tableRef.current.refetch();
+    }
+  }, 1000);
+
+  // 自定义WebSocket实现来替代DataTable的watchOptions
+  useEffect(() => {
+    const wsUrl = namespace
+      ? `/clusters/host/apis/data.fluid.io/v1alpha1/watch/namespaces/${namespace}/datasets?watch=true`
+      : `/clusters/host/apis/data.fluid.io/v1alpha1/watch/datasets?watch=true`;
+
+    console.log("=== 启动自定义WebSocket监听 ===");
+    console.log("WebSocket URL:", wsUrl);
+
+    let ws: WebSocket;
+    let reconnectTimeout: NodeJS.Timeout;
+    let pollingInterval: NodeJS.Timeout | undefined;
+    let reconnectCount = 0;
+    const maxReconnectAttempts = 5;
+
+    const connect = () => {
+      try {
+        // 构建完整的WebSocket URL
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const fullWsUrl = `${protocol}//${window.location.host}${wsUrl}`;
+        console.log("连接WebSocket:", fullWsUrl);
+
+        ws = new WebSocket(fullWsUrl);
+
+        ws.onopen = () => {
+          console.log("=== WebSocket连接成功 ===");
+          setWsConnected(true);
+          reconnectCount = 0; // 重置重连计数
+
+          // WebSocket连接成功，停止轮询
+          if (pollingInterval) {
+            console.log("WebSocket连接成功，停止轮询");
+            clearInterval(pollingInterval);
+            pollingInterval = undefined;
+          }
+        };
+
+        ws.onmessage = (event) => {
+          console.log("=== WebSocket收到消息 ===");
+          try {
+            const data = JSON.parse(event.data);
+            console.log("消息类型:", data.type);
+            console.log("对象名称:", data.object?.metadata?.name);
+
+            // 处理不同类型的事件
+            if (['ADDED', 'DELETED', 'MODIFIED'].includes(data.type)) {
+              console.log("=== 检测到数据变化，准备防抖刷新 ===");
+
+              // 清空选择状态（特别是删除事件）
+              if (data.type === 'DELETED') {
+                console.log("检测到删除事件，清空选择状态");
+                setSelectedDatasets([]);
+              }
+
+              // 使用防抖函数刷新表格，1000ms内多次调用只会执行最后一次
+              debouncedRefresh();
+            }
+          } catch (e) {
+            console.error("解析WebSocket消息失败:", e);
+          }
+        };
+
+        ws.onclose = (event) => {
+          console.log("=== WebSocket连接关闭 ===", event.code, event.reason);
+          setWsConnected(false);
+
+          // 自动重连（如果不是手动关闭）
+          if (event.code !== 1000 && reconnectCount < maxReconnectAttempts) {
+            const delay = Math.min(1000 * Math.pow(2, reconnectCount), 10000);
+            console.log(`${delay}ms后尝试重连 (${reconnectCount + 1}/${maxReconnectAttempts})`);
+
+            reconnectTimeout = setTimeout(() => {
+              reconnectCount++;
+              connect();
+            }, delay);
+          } else if (event.code !== 1000 && reconnectCount >= maxReconnectAttempts) {
+            // 重连次数用完，启动轮询保底方案
+            console.log("=== WebSocket重连失败，启动15秒轮询保底方案 ===");
+            pollingInterval = setInterval(() => {
+              console.log("=== 执行轮询刷新 ===");
+              if (tableRef.current) {
+                tableRef.current.refetch();
+              }
+            }, 15000);
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error("=== WebSocket错误 ===", error);
+          setWsConnected(false);
+        };
+      } catch (error) {
+        console.error("=== 创建WebSocket失败 ===", error);
+        setWsConnected(false);
+
+        // WebSocket创建失败，直接启动轮询保底方案
+        console.log("=== WebSocket创建失败，启动15秒轮询保底方案 ===");
+        pollingInterval = setInterval(() => {
+          console.log("=== 执行轮询刷新 ===");
+          if (tableRef.current) {
+            tableRef.current.refetch();
+          }
+        }, 15000);
+      }
+    };
+
+    // 启动连接
+    connect();
+
+    return () => {
+      console.log("=== 清理WebSocket连接和轮询 ===");
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+      if (ws) {
+        ws.close(1000, 'Component unmounting');
+      }
+      // 取消防抖函数的待执行任务
+      debouncedRefresh.cancel();
+      setWsConnected(false);
+    };
+  }, [namespace]);
+
   // 处理命名空间变更
   const handleNamespaceChange = (value: string) => {
     setNamespace(value);
@@ -183,10 +339,23 @@ const DatasetList: React.FC = () => {
 
   // 刷新表格数据
   const handleRefresh = () => {
+    console.log("=== 手动刷新被调用 ===");
     if (tableRef.current) {
       tableRef.current.refetch();
     }
   };
+
+  // 监听tableRef的变化，添加refetch方法的代理
+  // useEffect(() => {
+  //   if (tableRef.current && tableRef.current.refetch) {
+  //     const originalRefetch = tableRef.current.refetch;
+  //     tableRef.current.refetch = (...args) => {
+  //       console.log("=== DataTable refetch 被调用 ===");
+  //       console.log("调用参数:", args);
+  //       return originalRefetch.apply(tableRef.current, args);
+  //     };
+  //   }
+  // }, [tableRef.current]);
 
   // 处理单个数据集选择
   const handleSelectDataset = (dataset: Dataset, checked: boolean) => {
@@ -404,12 +573,30 @@ const DatasetList: React.FC = () => {
 
   return (
     <div>
-      <Banner 
+      <Banner
         icon={<Book2Duotone />}
         title={t('DATASETS')}
         description={t('DATASET_DESC')}
         className="mb12"
       />
+
+      {/* 连接状态指示器 */}
+      {/* <div style={{
+        padding: '8px 12px',
+        backgroundColor: wsConnected ? '#f6ffed' : '#fff7e6',
+        border: `1px solid ${wsConnected ? '#b7eb8f' : '#ffd591'}`,
+        borderRadius: '4px',
+        marginBottom: '12px',
+        fontSize: '12px',
+        color: wsConnected ? '#52c41a' : '#fa8c16'
+      }}>
+        {wsConnected ? '✓ WebSocket实时监控已连接' : '⚠️ 使用轮询模式（每15秒刷新）'}
+      </div> */}
+      <StatusIndicator type={wsConnected ? 'success' : 'warning'} motion={true}>
+        {wsConnected ? '✓ WebSocket实时监控已连接' : '⚠️ 使用轮询模式（每15秒刷新）'}
+      </StatusIndicator>
+
+
       <StyledCard>
         {error ? (
           <Empty 
@@ -429,17 +616,7 @@ const DatasetList: React.FC = () => {
             placeholder={t('SEARCH_BY_NAME')}
             transformRequestParams={transformRequestParams}
             simpleSearch={true}
-            watchOptions={{
-              enabled: true,
-              module: 'datasets',
-              url: namespace
-              ? `/clusters/host/apis/data.fluid.io/v1alpha1/watch/namespaces/${namespace}/datasets?watch=true`
-              : `/clusters/host/apis/data.fluid.io/v1alpha1/watch/datasets?watch=true`,
-              onAddedOrDeleted: () => {
-                // 当数据变化时，清空选择状态以避免选中已删除的数据集
-                setSelectedDatasets([]);
-              }
-            }}
+            onChangeData={handleDataChange}
             toolbarLeft={
               <ToolbarWrapper>
                 <Select
