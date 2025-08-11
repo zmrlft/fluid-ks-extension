@@ -251,11 +251,14 @@ const DatasetList: React.FC = () => {
         };
 
         ws.onclose = (event) => {
-          console.log("=== WebSocket连接关闭 ===", event.code, event.reason);
+          console.log("=== WebSocket连接关闭 ===", event.code, event.reason || '无reason');
           setWsConnected(false);
 
-          // 自动重连（如果不是手动关闭）
-          if (event.code !== 1000 && reconnectCount < maxReconnectAttempts) {
+          // 检查是否是我们主动关闭的（通过reason判断）
+          const isManualClose = event.reason === 'Component unmounting';
+
+          if (!isManualClose && reconnectCount < maxReconnectAttempts) {
+            // 不是手动关闭，尝试重连
             const delay = Math.min(1000 * Math.pow(2, reconnectCount), 10000);
             console.log(`${delay}ms后尝试重连 (${reconnectCount + 1}/${maxReconnectAttempts})`);
 
@@ -263,7 +266,7 @@ const DatasetList: React.FC = () => {
               reconnectCount++;
               connect();
             }, delay);
-          } else if (event.code !== 1000 && reconnectCount >= maxReconnectAttempts) {
+          } else if (!isManualClose && reconnectCount >= maxReconnectAttempts) {
             // 重连次数用完，启动轮询保底方案
             console.log("=== WebSocket重连失败，启动15秒轮询保底方案 ===");
             pollingInterval = setInterval(() => {
@@ -272,6 +275,8 @@ const DatasetList: React.FC = () => {
                 tableRef.current.refetch();
               }
             }, 15000);
+          } else if (isManualClose) {
+            console.log("=== 组件卸载，正常关闭WebSocket ===");
           }
         };
 
