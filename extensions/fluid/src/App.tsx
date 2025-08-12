@@ -3,6 +3,8 @@ import { Banner, Card } from '@kubed/components';
 import { Book2Duotone, RocketDuotone, DownloadDuotone } from '@kubed/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import styled from 'styled-components';
+import ClusterSelector from './components/ClusterSelector';
+import { useClusterStore } from './stores/cluster';
 
 declare const t: (key: string, options?: any) => string;
 
@@ -124,6 +126,7 @@ export default function App() {
         <LogoWrapper>
           <img src={'https://fluid-cloudnative.github.io/img/fluid-horizontal-color.png'} alt="Fluid Logo" style={{ width: '120px', height: '40px' }} />
         </LogoWrapper>
+        <ClusterSelector />
         <StyledMenu>
           {menuItems.map((item) => (
             <div
