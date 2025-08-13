@@ -105,6 +105,7 @@ const DataLoadList: React.FC = () => {
     let pollingInterval: NodeJS.Timeout | undefined;
     let reconnectCount = 0;
     const maxReconnectAttempts = 5;
+    let isComponentUnmounting = false; // 添加标志变量跟踪组件卸载状态
 
     const connect = () => {
       try {
@@ -148,11 +149,11 @@ const DataLoadList: React.FC = () => {
         };
 
         ws.onclose = (event) => {
-          console.log("=== WebSocket连接关闭 ===", event.code, event.reason || '无reason');
+          console.log("=== WebSocket连接关闭 ===", event.code, event.reason || '无reason', ws?.url);
           setWsConnected(false);
 
-          // 检查是否是我们主动关闭的（通过reason判断）
-          const isManualClose = event.reason === 'Component unmounting';
+          // 检查是否是我们主动关闭的
+          const isManualClose = isComponentUnmounting;
 
           if (!isManualClose && reconnectCount < maxReconnectAttempts) {
             // 不是手动关闭，尝试重连
@@ -200,7 +201,8 @@ const DataLoadList: React.FC = () => {
     connect();
 
     return () => {
-      console.log("=== 清理WebSocket连接和轮询 ===");
+      console.log("=== 清理WebSocket连接和轮询 ===", ws?.url);
+      isComponentUnmounting = true;
       if (reconnectTimeout) {
         clearTimeout(reconnectTimeout);
       }
