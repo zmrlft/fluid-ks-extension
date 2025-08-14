@@ -6,6 +6,8 @@ import { DataTable, TableRef, StatusIndicator } from '@ks-console/shared';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DownloadDuotone } from '@kubed/icons';
 import { transformRequestParams } from '../../../utils';
+import { useClusterStore } from '../../../stores/cluster';
+import { getApiPath, getWebSocketUrl, request } from '../../../utils/request';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -83,6 +85,9 @@ const DataLoadList: React.FC = () => {
   const navigate = useNavigate();
   const tableRef = useRef<TableRef<DataLoad>>(null);
 
+  // 集群状态管理
+  const { currentCluster } = useClusterStore();
+
   // 创建防抖的刷新函数，1000ms内最多执行一次
   const debouncedRefresh = debounce(() => {
     console.log("=== 执行防抖刷新 ===");
@@ -93,9 +98,10 @@ const DataLoadList: React.FC = () => {
 
   // 自定义WebSocket实现来替代DataTable的watchOptions
   useEffect(() => {
-    const wsUrl = namespace
-      ? `/clusters/host/apis/data.fluid.io/v1alpha1/watch/namespaces/${namespace}/dataloads?watch=true`
-      : `/clusters/host/apis/data.fluid.io/v1alpha1/watch/dataloads?watch=true`;
+    const wsPath = namespace
+      ? `/apis/data.fluid.io/v1alpha1/watch/namespaces/${namespace}/dataloads?watch=true`
+      : `/apis/data.fluid.io/v1alpha1/watch/dataloads?watch=true`;
+    const wsUrl = getWebSocketUrl(wsPath);
 
     console.log("=== 启动自定义WebSocket监听 ===");
     console.log("WebSocket URL:", wsUrl);
@@ -109,12 +115,9 @@ const DataLoadList: React.FC = () => {
 
     const connect = () => {
       try {
-        // 构建完整的WebSocket URL
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const fullWsUrl = `${protocol}//${window.location.host}${wsUrl}`;
-        console.log("连接WebSocket:", fullWsUrl);
+        console.log("连接WebSocket:", wsUrl);
 
-        ws = new WebSocket(fullWsUrl);
+        ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
           console.log("=== WebSocket连接成功 ===");
@@ -169,9 +172,7 @@ const DataLoadList: React.FC = () => {
             console.log("=== WebSocket重连失败，启动15秒轮询保底方案 ===");
             pollingInterval = setInterval(() => {
               console.log("=== 执行轮询刷新 ===");
-              if (tableRef.current) {
-                tableRef.current.refetch();
-              }
+                debouncedRefresh();
             }, 15000);
           } else if (isManualClose) {
             console.log("=== 组件卸载，正常关闭WebSocket ===");
@@ -190,9 +191,7 @@ const DataLoadList: React.FC = () => {
         console.log("=== WebSocket创建失败，启动15秒轮询保底方案 ===");
         pollingInterval = setInterval(() => {
           console.log("=== 执行轮询刷新 ===");
-          if (tableRef.current) {
-            tableRef.current.refetch();
-          }
+            debouncedRefresh();
         }, 15000);
       }
     };
@@ -216,20 +215,33 @@ const DataLoadList: React.FC = () => {
       debouncedRefresh.cancel();
       setWsConnected(false);
     };
-  }, [namespace]);
-  
+  }, [namespace, currentCluster]);
+
+  // 监听集群切换，刷新数据表格
+  // const isFirstClusterEffect = useRef(true);
+  // useEffect(() => {
+  //   if (isFirstClusterEffect.current) {
+  //     isFirstClusterEffect.current = false;
+  //     return;
+  //   }
+  //   if (tableRef.current) {
+  //     console.log('集群切换，刷新DataLoad数据表格:', currentCluster);
+  //     debouncedRefresh();
+  //   }
+  // }, [currentCluster]);
+
   // 获取所有命名空间
   useEffect(() => {
     const fetchNamespaces = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await fetch('/api/v1/namespaces');
-        
+        const response = await request('/api/v1/namespaces');
+
         if (!response.ok) {
           throw new Error(`${response.status}: ${response.statusText}`);
         }
-        
+
         const data = await response.json();
         if (data && data.items) {
           const namespaceList = data.items.map((item: any) => item.metadata.name);
@@ -243,7 +255,7 @@ const DataLoadList: React.FC = () => {
       }
     };
     fetchNamespaces();
-  }, []);
+  }, [currentCluster]); // 添加currentCluster依赖，集群切换时重新获取命名空间
 
   // 处理命名空间变更
   const handleNamespaceChange = (value: string) => {
@@ -260,13 +272,6 @@ const DataLoadList: React.FC = () => {
   const handleCreateDataLoad = () => {
     // 暂时实现为提示信息
     alert('创建数据加载任务功能待实现');
-  };
-
-  // 刷新表格数据
-  const handleRefresh = () => {
-    if (tableRef.current) {
-      tableRef.current.refetch();
-    }
   };
 
   // 根据CRD定义完善表格列
@@ -362,7 +367,7 @@ const DataLoadList: React.FC = () => {
             icon="warning" 
             title={t('FETCH_ERROR_TITLE')} 
             description={error} 
-            action={<Button onClick={handleRefresh}>{t('RETRY')}</Button>}
+            action={<Button onClick={debouncedRefresh}>{t('RETRY')}</Button>}
           />
         ) : (
           <DataTable
@@ -370,7 +375,7 @@ const DataLoadList: React.FC = () => {
             rowKey="metadata.uid"
             tableName="dataload-list"
             columns={columns}
-            url={namespace ? `/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/dataloads` : '/kapis/data.fluid.io/v1alpha1/dataloads'}
+            url={getApiPath(namespace ? `/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/dataloads` : '/kapis/data.fluid.io/v1alpha1/dataloads')}
             format={formatDataLoad}
             placeholder={t('SEARCH_BY_NAME')}
             transformRequestParams={transformRequestParams}
