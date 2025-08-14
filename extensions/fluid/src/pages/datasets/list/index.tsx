@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { get, debounce } from 'lodash';
 import { Button, Card, Banner, Select, Empty, Checkbox, notify } from '@kubed/components';
@@ -7,6 +7,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Book2Duotone } from '@kubed/icons';
 import { transformRequestParams } from '../../../utils';
 import CreateDatasetModal from '../components/CreateDatasetModal';
+import { useClusterStore } from '../../../stores/cluster';
+import { getApiPath, getWebSocketUrl, request } from '../../../utils/request';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -105,27 +107,12 @@ const DatasetList: React.FC = () => {
   const params: Record<string, any> = useParams();
   const navigate = useNavigate();
   const tableRef = useRef<TableRef<Dataset>>(null);
+
+  // 集群状态管理
+  const { currentCluster } = useClusterStore();
   console.log(params,'params');
   
-  // 添加轮询机制，秒刷新一次
-  useEffect(() => {
-    let intervalId: number;
-    
-    if (false) {
-      intervalId = window.setInterval(() => {
-        console.log('执行数据轮询刷新');
-        if (tableRef.current) {
-          tableRef.current.refetch();
-        }
-      }, 15000);
-    }
-    
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [namespace]);
+  // 这个轮询机制已被WebSocket替代，移除无用代码
 
   // 获取所有命名空间
   useEffect(() => {
@@ -133,7 +120,7 @@ const DatasetList: React.FC = () => {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await fetch('/api/v1/namespaces');
+        const response = await request('/api/v1/namespaces');
 
         if (!response.ok) {
           throw new Error(`${response.status}: ${response.statusText}`);
@@ -152,7 +139,7 @@ const DatasetList: React.FC = () => {
       }
     };
     fetchNamespaces();
-  }, []);
+  }, [currentCluster]); // 添加currentCluster依赖，集群切换时重新获取命名空间
 
   // 当命名空间变化时，清空选择状态和当前页面数据
   useEffect(() => {
@@ -190,28 +177,26 @@ const DatasetList: React.FC = () => {
 
   // 自定义WebSocket实现来替代DataTable的watchOptions
   useEffect(() => {
-    const wsUrl = namespace
-      ? `/clusters/host/apis/data.fluid.io/v1alpha1/watch/namespaces/${namespace}/datasets?watch=true`
-      : `/clusters/host/apis/data.fluid.io/v1alpha1/watch/datasets?watch=true`;
+    const wsPath = namespace
+      ? `/apis/data.fluid.io/v1alpha1/watch/namespaces/${namespace}/datasets?watch=true`
+      : `/apis/data.fluid.io/v1alpha1/watch/datasets?watch=true`;
+    const wsUrl = getWebSocketUrl(wsPath);
 
     console.log("=== 启动自定义WebSocket监听 ===");
     console.log("WebSocket URL:", wsUrl);
 
     let ws: WebSocket;
     let reconnectTimeout: NodeJS.Timeout;
-    let pollingInterval: NodeJS.Timeout | undefined;
+    let pollingInterval: NodeJS.Timeout;
     let reconnectCount = 0;
     const maxReconnectAttempts = 5;
     let isComponentUnmounting = false; // 添加标志变量跟踪组件卸载状态
 
     const connect = () => {
       try {
-        // 构建完整的WebSocket URL
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const fullWsUrl = `${protocol}//${window.location.host}${wsUrl}`;
-        console.log("连接WebSocket:", fullWsUrl);
+        console.log("连接WebSocket:", wsUrl);
 
-        ws = new WebSocket(fullWsUrl);
+        ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
           console.log("=== WebSocket连接成功 ===");
@@ -222,7 +207,6 @@ const DatasetList: React.FC = () => {
           if (pollingInterval) {
             console.log("WebSocket连接成功，停止轮询");
             clearInterval(pollingInterval);
-            pollingInterval = undefined;
           }
         };
 
@@ -273,7 +257,7 @@ const DatasetList: React.FC = () => {
             pollingInterval = setInterval(() => {
               console.log("=== 执行轮询刷新 ===");
               if (tableRef.current) {
-                tableRef.current.refetch();
+                debouncedRefresh();
               }
             }, 15000);
           } else if (isManualClose) {
@@ -294,7 +278,7 @@ const DatasetList: React.FC = () => {
         pollingInterval = setInterval(() => {
           console.log("=== 执行轮询刷新 ===");
           if (tableRef.current) {
-            tableRef.current.refetch();
+            debouncedRefresh();
           }
         }, 15000);
       }
@@ -319,7 +303,20 @@ const DatasetList: React.FC = () => {
       debouncedRefresh.cancel();
       setWsConnected(false);
     };
-  }, [namespace]);
+  }, [namespace, currentCluster]);
+
+  // 监听集群切换，刷新数据表格
+  // const isFirstClusterEffect = useRef(true);
+  // useEffect(() => {
+  //   if (isFirstClusterEffect.current) {
+  //     isFirstClusterEffect.current = false;
+  //     return;
+  //   }
+  //   if (tableRef.current) {
+  //     console.log('集群切换，刷新数据表格:', currentCluster);
+  //     debouncedRefresh();
+  //   }
+  // }, [currentCluster]);
 
   // 处理命名空间变更
   const handleNamespaceChange = (value: string) => {
@@ -328,7 +325,7 @@ const DatasetList: React.FC = () => {
 
   // 点击名称跳转到详情页的函数
   const handleNameClick = (name: string, ns: string) => {
-    navigate(`/fluid/datasets/${ns}/${name}`);
+    navigate(`/fluid/datasets/${currentCluster}/${ns}/${name}`);
   };
   
   // 创建数据集按钮点击处理
@@ -339,17 +336,15 @@ const DatasetList: React.FC = () => {
   // 创建数据集成功处理
   const handleCreateSuccess = () => {
     // 刷新表格数据
-    if (tableRef.current) {
-      tableRef.current.refetch();
-    }
+    // if (tableRef.current) {
+    //   debouncedRefresh();
+    // }
   };
 
   // 刷新表格数据
   const handleRefresh = () => {
     console.log("=== 手动刷新被调用 ===");
-    if (tableRef.current) {
-      tableRef.current.refetch();
-    }
+    debouncedRefresh();
   };
 
   // 监听tableRef的变化，添加refetch方法的代理
@@ -393,7 +388,7 @@ const DatasetList: React.FC = () => {
         ? `/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets`
         : '/kapis/data.fluid.io/v1alpha1/datasets';
 
-      const response = await fetch(url);
+      const response = await request(url);
       if (response.ok) {
         const data = await response.json();
         if (data && data.items) {
@@ -416,7 +411,7 @@ const DatasetList: React.FC = () => {
   // 删除单个数据集
   const deleteDataset = async (name: string, namespace: string) => {
     try {
-      const response = await fetch(`/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets/${name}`, {
+      const response = await request(`/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets/${name}`, {
         method: 'DELETE',
       });
 
@@ -459,7 +454,7 @@ const DatasetList: React.FC = () => {
 
       notify.success(`成功删除 ${selectedDatasets.length} 个数据集`);
       setSelectedDatasets([]);
-      handleRefresh();
+      //handleRefresh();
     } catch (error) {
       console.error('批量删除失败:', error);
       notify.error('删除数据集失败，请重试');
@@ -586,24 +581,9 @@ const DatasetList: React.FC = () => {
         description={t('DATASET_DESC')}
         className="mb12"
       />
-
-      {/* 连接状态指示器 */}
-      {/* <div style={{
-        padding: '8px 12px',
-        backgroundColor: wsConnected ? '#f6ffed' : '#fff7e6',
-        border: `1px solid ${wsConnected ? '#b7eb8f' : '#ffd591'}`,
-        borderRadius: '4px',
-        marginBottom: '12px',
-        fontSize: '12px',
-        color: wsConnected ? '#52c41a' : '#fa8c16'
-      }}>
-        {wsConnected ? '✓ WebSocket实时监控已连接' : '⚠️ 使用轮询模式（每15秒刷新）'}
-      </div> */}
       <StatusIndicator type={wsConnected ? 'success' : 'warning'} motion={true}>
         {wsConnected ? '✓ WebSocket实时监控已连接' : '⚠️ 使用轮询模式（每15秒刷新）'}
       </StatusIndicator>
-
-
       <StyledCard>
         {error ? (
           <Empty 
@@ -618,7 +598,7 @@ const DatasetList: React.FC = () => {
             rowKey="metadata.uid"
             tableName="dataset-list"
             columns={columns}
-            url={namespace ? `/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets` : '/kapis/data.fluid.io/v1alpha1/datasets'}
+            url={getApiPath(namespace ? `/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets` : '/kapis/data.fluid.io/v1alpha1/datasets')}
             format={formatDataset}
             placeholder={t('SEARCH_BY_NAME')}
             transformRequestParams={transformRequestParams}
