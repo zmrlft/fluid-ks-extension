@@ -7,6 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import { RocketDuotone } from '@kubed/icons';
 import { runtimeTypeList, RuntimeTypeMeta } from '../runtimeMap';
 import { transformRequestParams } from '../../../utils';
+import { useClusterStore } from '../../../stores/cluster';
+import { getApiPath, getWebSocketUrl, request } from '../../../utils/request';
 
 // 声明全局 t 函数（国际化）
 declare const t: (key: string) => string;
@@ -48,6 +50,9 @@ const RuntimeList: React.FC = () => {
   const [namespaces, setNamespaces] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // 集群状态管理
+  const { currentCluster } = useClusterStore();
   const [currentRuntimeType, setCurrentRuntimeType] = useState<number>(0); // 当前选择的 Runtime 类型索引
   const [wsConnected, setWsConnected] = useState<boolean>(false);
   const tableRef = useRef<TableRef<any>>(null);
@@ -63,9 +68,10 @@ const RuntimeList: React.FC = () => {
   // 自定义WebSocket实现来监控当前选中的运行时类型
   useEffect(() => {
     const currentRuntime = runtimeTypeList[currentRuntimeType];
-    const wsUrl = namespace
-      ? `/clusters/host/apis/data.fluid.io/v1alpha1/watch/namespaces/${namespace}/${currentRuntime.plural}?watch=true`
-      : `/clusters/host/apis/data.fluid.io/v1alpha1/watch/${currentRuntime.plural}?watch=true`;
+    const wsPath = namespace
+      ? `/apis/data.fluid.io/v1alpha1/watch/namespaces/${namespace}/${currentRuntime.plural}?watch=true`
+      : `/apis/data.fluid.io/v1alpha1/watch/${currentRuntime.plural}?watch=true`;
+    const wsUrl = getWebSocketUrl(wsPath);
 
     console.log(`=== 启动${currentRuntime.displayName} WebSocket监听 ===`);
     console.log("WebSocket URL:", wsUrl);
@@ -79,12 +85,9 @@ const RuntimeList: React.FC = () => {
 
     const connect = () => {
       try {
-        // 构建完整的WebSocket URL
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const fullWsUrl = `${protocol}//${window.location.host}${wsUrl}`;
-        console.log("连接WebSocket:", fullWsUrl);
+        console.log("连接WebSocket:", wsUrl);
 
-        ws = new WebSocket(fullWsUrl);
+        ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
           console.log(`=== ${currentRuntime.displayName} WebSocket连接成功 ===`);
@@ -136,9 +139,7 @@ const RuntimeList: React.FC = () => {
             console.log("=== WebSocket重连失败，启动15秒轮询保底方案 ===");
             pollingInterval = setInterval(() => {
               console.log("=== 执行轮询刷新 ===");
-              if (tableRef.current) {
-                tableRef.current.refetch();
-              }
+              debouncedRefresh();
             }, 15000);
           } else if (isManualClose) {
             console.log("=== 组件卸载，正常关闭WebSocket ===");
@@ -157,9 +158,7 @@ const RuntimeList: React.FC = () => {
         console.log("=== WebSocket创建失败，启动15秒轮询保底方案 ===");
         pollingInterval = setInterval(() => {
           console.log("=== 执行轮询刷新 ===");
-          if (tableRef.current) {
-            tableRef.current.refetch();
-          }
+            debouncedRefresh();
         }, 15000);
       }
     };
@@ -185,16 +184,29 @@ const RuntimeList: React.FC = () => {
       debouncedRefresh.cancel();
       setWsConnected(false);
     };
-  }, [namespace, currentRuntimeType]);
-  
+  }, [namespace, currentRuntimeType, currentCluster]);
+
+  // 监听集群切换，刷新数据表格
+  // const isFirstClusterEffect = useRef(true);
+  // useEffect(() => {
+  //   if (isFirstClusterEffect.current) {
+  //     isFirstClusterEffect.current = false;
+  //     return;
+  //   }
+  //   if (tableRef.current) {
+  //     console.log('集群切换，刷新运行时数据表格:', currentCluster);
+  //     debouncedRefresh();
+  //   }
+  // }, [currentCluster]);
+
   // 获取所有 namespace
   useEffect(() => {
     const fetchNamespaces = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await fetch('/api/v1/namespaces');
-        
+        const response = await request('/api/v1/namespaces');
+
         if (!response.ok) {
           throw new Error(`${response.status}: ${response.statusText}`);
         }
@@ -211,31 +223,20 @@ const RuntimeList: React.FC = () => {
         setIsLoading(false);
       }
     };
-    
+
     fetchNamespaces();
-  }, []);
+  }, [currentCluster]); // 添加currentCluster依赖，集群切换时重新获取命名空间
 
   // 处理 namespace 变更
   const handleNamespaceChange = (value: string) => {
     setNamespace(value);
-    if (tableRef.current) {
-      tableRef.current.refetch();
-    }
+    debouncedRefresh();
   };
 
   // 处理 Runtime 类型切换
   const handleRuntimeTypeChange = (index: number) => {
     setCurrentRuntimeType(index);
-    if (tableRef.current) {
-      tableRef.current.refetch();
-    }
-  };
-
-  // 刷新表格数据
-  const handleRefresh = () => {
-    if (tableRef.current) {
-      tableRef.current.refetch();
-    }
+      debouncedRefresh();
   };
 
   // 点击名称跳转详情页（预留）
@@ -336,10 +337,11 @@ const RuntimeList: React.FC = () => {
     },
   ] as any;
 
-  // 获取 API 路径
-  const apiPath = namespace 
+  // 获取 API 路径，添加集群前缀
+  const basePath = namespace
     ? runtimeTypeList[currentRuntimeType].getApiPath(namespace)
     : runtimeTypeList[currentRuntimeType].getApiPath();
+  const apiPath = getApiPath(basePath);
 
   return (
     <div>
@@ -361,7 +363,7 @@ const RuntimeList: React.FC = () => {
             icon="warning" 
             title={t('FETCH_ERROR_TITLE')} 
             description={error} 
-            action={<Button onClick={handleRefresh}>{t('RETRY')}</Button>}
+            action={<Button onClick={debouncedRefresh}>{t('RETRY')}</Button>}
           />
         ) : (
           <DataTable
