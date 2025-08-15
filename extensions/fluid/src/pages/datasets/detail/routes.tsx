@@ -13,7 +13,7 @@ import YAML from './YAML';
 
 const routes: RouteObject[] = [
   {
-    path: '/fluid/datasets/:cluster/:namespace/:name',
+    path: '/fluid/:cluster/:namespace/datasets/:name',
     element: <DatasetDetail />,
     children: [
       {

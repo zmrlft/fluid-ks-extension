@@ -89,8 +89,9 @@ const DatasetDetail: React.FC = () => {
 
   // 获取列表页URL
   const listUrl = useMemo(() => {
-    return `/fluid/datasets`;
-  }, []);
+    const clusterName = cluster || 'host';
+    return `/fluid/${clusterName}/datasets`;
+  }, [cluster]);
 
   // 同步URL中的集群参数到状态
   useEffect(() => {
@@ -136,7 +137,8 @@ const DatasetDetail: React.FC = () => {
 
   // 定义标签页
   const tabs = useMemo(() => {
-    const path = `/fluid/datasets/${cluster}/${namespace}/${name}`;
+    const clusterName = cluster || 'host';
+    const path = `/fluid/${clusterName}/${namespace}/datasets/${name}`;
     return [
       {
         title: t('RESOURCE_STATUS'),

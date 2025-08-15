@@ -7,8 +7,13 @@ import DataLoadList from '../pages/dataloads/list';
 import datasetDetailRoutes from '../pages/datasets/detail/routes';
 
 export default [
+  // 重定向根路径到默认集群
   {
     path: '/fluid',
+    element: <Navigate to="/fluid/host/datasets" replace />,
+  },
+  {
+    path: '/fluid/:cluster',
     element: <App />,
     children: [
       { index: true, element: <Navigate to="datasets" replace /> },
