@@ -7,7 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Book2Duotone } from '@kubed/icons';
 import { transformRequestParams } from '../../../utils';
 import CreateDatasetModal from '../components/CreateDatasetModal';
-import { useClusterStore } from '../../../stores/cluster';
+
 import { getApiPath, getWebSocketUrl, request } from '../../../utils/request';
 
 // 全局t函数声明
@@ -108,8 +108,8 @@ const DatasetList: React.FC = () => {
   const navigate = useNavigate();
   const tableRef = useRef<TableRef<Dataset>>(null);
 
-  // 集群状态管理
-  const { currentCluster } = useClusterStore();
+  // 从URL参数获取集群信息
+  const currentCluster = params.cluster || 'host';
   console.log(params,'params');
   
   // 这个轮询机制已被WebSocket替代，移除无用代码

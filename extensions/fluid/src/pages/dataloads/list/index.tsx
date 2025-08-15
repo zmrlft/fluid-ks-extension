@@ -6,7 +6,7 @@ import { DataTable, TableRef, StatusIndicator } from '@ks-console/shared';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DownloadDuotone } from '@kubed/icons';
 import { transformRequestParams } from '../../../utils';
-import { useClusterStore } from '../../../stores/cluster';
+
 import { getApiPath, getWebSocketUrl, request } from '../../../utils/request';
 
 // 全局t函数声明
@@ -85,8 +85,8 @@ const DataLoadList: React.FC = () => {
   const navigate = useNavigate();
   const tableRef = useRef<TableRef<DataLoad>>(null);
 
-  // 集群状态管理
-  const { currentCluster } = useClusterStore();
+  // 从URL参数获取集群信息
+  const currentCluster = params.cluster || 'host';
 
   // 创建防抖的刷新函数，1000ms内最多执行一次
   const debouncedRefresh = debounce(() => {

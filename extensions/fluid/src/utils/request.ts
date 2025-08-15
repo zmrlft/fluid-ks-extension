@@ -1,14 +1,29 @@
 /**
  * 跨集群API请求工具类
  * 统一处理集群前缀和API路径
+ * 基于URL路径获取集群信息，无需全局状态管理
  */
+
+/**
+ * 从当前URL路径中解析集群名称
+ * @returns 集群名称，如 'host' 或 'member-cluster'
+ */
+export const getCurrentClusterFromUrl = (): string => {
+  const pathSegments = window.location.pathname.split('/');
+  // URL 格式: /fluid/{cluster}/...
+  const fluidIndex = pathSegments.indexOf('fluid');
+  if (fluidIndex >= 0 && fluidIndex + 1 < pathSegments.length) {
+    return pathSegments[fluidIndex + 1];
+  }
+  return 'host'; // 默认集群
+};
 
 /**
  * 获取当前选择的集群前缀
  * @returns 集群前缀，如 /clusters/host 或 /clusters/member-cluster
  */
 export const getClusterPrefix = (): string => {
-  const cluster = getCurrentCluster();
+  const cluster = getCurrentClusterFromUrl();
   return `/clusters/${cluster}`;
 };
 
@@ -22,12 +37,12 @@ export const getApiPath = (path: string): string => {
   if (path.startsWith('/clusters/')) {
     return path;
   }
-  
+
   // 对于WebSocket路径，也需要添加集群前缀
   if (path.startsWith('/apis/') || path.startsWith('/kapis/') || path.startsWith('/api/')) {
     return `${getClusterPrefix()}${path}`;
   }
-  
+
   return `${getClusterPrefix()}${path}`;
 };
 
@@ -74,7 +89,8 @@ export const getWebSocketUrl = (path: string): string => {
 /**
  * 获取当前集群名称
  * @returns 当前集群名称
+ * @deprecated 使用 getCurrentClusterFromUrl() 替代
  */
 export const getCurrentCluster = (): string => {
-  return localStorage.getItem('current-cluster') || 'host';
+  return getCurrentClusterFromUrl();
 };

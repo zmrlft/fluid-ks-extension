@@ -3,11 +3,11 @@ import styled from 'styled-components';
 import { get, debounce } from 'lodash';
 import { Button, Card, Banner, Select, Empty } from '@kubed/components';
 import { DataTable, TableRef, StatusIndicator } from '@ks-console/shared';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { RocketDuotone } from '@kubed/icons';
 import { runtimeTypeList, RuntimeTypeMeta } from '../runtimeMap';
 import { transformRequestParams } from '../../../utils';
-import { useClusterStore } from '../../../stores/cluster';
+
 import { getApiPath, getWebSocketUrl, request } from '../../../utils/request';
 
 // 声明全局 t 函数（国际化）
@@ -46,13 +46,14 @@ interface RuntimeItem {
 // Runtime 列表页组件
 const RuntimeList: React.FC = () => {
   const navigate = useNavigate();
+  const params = useParams<{ cluster: string }>();
   const [namespace, setNamespace] = useState<string>('');
   const [namespaces, setNamespaces] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // 集群状态管理
-  const { currentCluster } = useClusterStore();
+  // 从URL参数获取集群信息
+  const currentCluster = params.cluster || 'host';
   const [currentRuntimeType, setCurrentRuntimeType] = useState<number>(0); // 当前选择的 Runtime 类型索引
   const [wsConnected, setWsConnected] = useState<boolean>(false);
   const tableRef = useRef<TableRef<any>>(null);
