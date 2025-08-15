@@ -1,11 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Select } from '@kubed/components';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useClusterStore } from '../stores/cluster';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
+
+// 集群信息类型
+interface ClusterInfo {
+  name: string;
+  displayName: string;
+}
 
 const ClusterSelectorWrapper = styled.div`
   padding: 12px 16px;
@@ -27,22 +32,49 @@ const ClusterSelectorWrapper = styled.div`
 const ClusterSelector: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const {
-    currentCluster,
-    clusters,
-    isLoading,
-    error,
-    setCurrentCluster,
-    fetchClusters
-  } = useClusterStore();
+  const params = useParams<{ cluster: string }>();
+
+  // 本地状态管理
+  const [clusters, setClusters] = useState<ClusterInfo[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // 从URL参数获取当前集群
+  const currentCluster = params.cluster || 'host';
+
+  // 获取集群列表
+  const fetchClusters = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // 获取集群列表不需要集群前缀，因为这是获取所有集群的API
+      const response = await fetch('/kapis/cluster.kubesphere.io/v1alpha1/clusters');
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch clusters: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const clusterList: ClusterInfo[] = data.items?.map((item: any) => ({
+        name: item.metadata.name,
+        displayName: item.spec?.displayName || item.metadata.name
+      })) || [];
+
+      setClusters(clusterList);
+    } catch (error) {
+      console.error('获取集群列表失败:', error);
+      setError(error instanceof Error ? error.message : '获取集群列表失败');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchClusters();
-  }, [fetchClusters]);
+  }, []);
 
   const handleClusterChange = (value: string) => {
     console.log('切换集群:', value);
-    setCurrentCluster(value);
 
     // 更新URL以反映新的集群选择
     const pathParts = location.pathname.split('/');

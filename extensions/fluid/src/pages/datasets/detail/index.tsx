@@ -9,7 +9,7 @@ import { useCacheStore as useStore } from '@ks-console/shared';
 import { DetailPagee } from '@ks-console/shared';
 import { get } from 'lodash';
 import { Book2Duotone } from '@kubed/icons';
-import { useClusterStore } from '../../../stores/cluster';
+
 import { request } from '../../../utils/request';
 
 // 全局t函数声明
@@ -76,8 +76,8 @@ const DatasetDetail: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<boolean>(false);
 
-  // 集群状态管理
-  const { setCurrentCluster } = useClusterStore();
+  // 从URL参数获取集群信息
+  const currentCluster = cluster || 'host';
 
   // 存储详情页数据到全局状态
   const [, setDetailProps] = useStore('DatasetDetailProps', {
@@ -93,12 +93,7 @@ const DatasetDetail: React.FC = () => {
     return `/fluid/${clusterName}/datasets`;
   }, [cluster]);
 
-  // 同步URL中的集群参数到状态
-  useEffect(() => {
-    if (cluster) {
-      setCurrentCluster(cluster);
-    }
-  }, [cluster, setCurrentCluster]);
+  // 集群信息已从URL参数获取，无需额外同步
 
   // 获取数据集详情
   useEffect(() => {
