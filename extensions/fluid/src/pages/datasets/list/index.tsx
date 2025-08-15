@@ -325,7 +325,7 @@ const DatasetList: React.FC = () => {
 
   // 点击名称跳转到详情页的函数
   const handleNameClick = (name: string, ns: string) => {
-    navigate(`/fluid/datasets/${currentCluster}/${ns}/${name}`);
+    navigate(`/fluid/${currentCluster}/${ns}/datasets/${name}`);
   };
   
   // 创建数据集按钮点击处理

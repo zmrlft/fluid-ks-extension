@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { Banner, Card } from '@kubed/components';
 import { Book2Duotone, RocketDuotone, DownloadDuotone } from '@kubed/icons';
-import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useNavigate, useLocation, useParams, Outlet } from 'react-router-dom';
 import styled from 'styled-components';
 import ClusterSelector from './components/ClusterSelector';
 import { useClusterStore } from './stores/cluster';
@@ -102,6 +102,15 @@ const menuItems = [
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
+  const params = useParams<{ cluster: string }>();
+  const { currentCluster, setCurrentCluster } = useClusterStore();
+
+  // 从URL参数中解析集群信息并同步到状态
+  useEffect(() => {
+    if (params.cluster && params.cluster !== currentCluster) {
+      setCurrentCluster(params.cluster);
+    }
+  }, [params.cluster, currentCluster, setCurrentCluster]);
   
   const selectedKeys = useMemo(() => {
     if (location.pathname.includes('/datasets')) {
@@ -117,7 +126,8 @@ export default function App() {
   }, [location]);
 
   const handleMenuClick = (key: string) => {
-    navigate(`/fluid/${key}`);
+    const cluster = params.cluster || currentCluster || 'host';
+    navigate(`/fluid/${cluster}/${key}`);
   };
 
   return (

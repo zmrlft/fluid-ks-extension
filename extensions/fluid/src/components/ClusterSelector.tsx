@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Select } from '@kubed/components';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useClusterStore } from '../stores/cluster';
 import styled from 'styled-components';
 
@@ -24,15 +25,17 @@ const ClusterSelectorWrapper = styled.div`
 `;
 
 const ClusterSelector: React.FC = () => {
-  const { 
-    currentCluster, 
-    clusters, 
-    isLoading, 
-    error, 
-    setCurrentCluster, 
-    fetchClusters 
+  const navigate = useNavigate();
+  const location = useLocation();
+  const {
+    currentCluster,
+    clusters,
+    isLoading,
+    error,
+    setCurrentCluster,
+    fetchClusters
   } = useClusterStore();
-  
+
   useEffect(() => {
     fetchClusters();
   }, [fetchClusters]);
@@ -40,6 +43,30 @@ const ClusterSelector: React.FC = () => {
   const handleClusterChange = (value: string) => {
     console.log('切换集群:', value);
     setCurrentCluster(value);
+
+    // 更新URL以反映新的集群选择
+    const pathParts = location.pathname.split('/');
+    if (pathParts.length >= 3 && pathParts[1] === 'fluid') {
+      // 新的URL结构分析：
+      // 列表页：/fluid/{cluster}/datasets -> ['', 'fluid', 'cluster', 'datasets']
+      // 详情页：/fluid/{cluster}/{namespace}/datasets/{name} -> ['', 'fluid', 'cluster', 'namespace', 'datasets', 'name']
+
+      if (pathParts.length >= 6) {
+        // 在详情页，重定向到对应的列表页
+        const resourceType = pathParts[4]; // datasets, runtimes, dataloads等
+        navigate(`/fluid/${value}/${resourceType}`);
+      } else if (pathParts.length === 4) {
+        // 在列表页，保持当前页面类型
+        const currentPage = pathParts[3] || 'datasets';
+        navigate(`/fluid/${value}/${currentPage}`);
+      } else {
+        // 其他情况，默认导航到datasets页面
+        navigate(`/fluid/${value}/datasets`);
+      }
+    } else {
+      // 默认导航到datasets页面
+      navigate(`/fluid/${value}/datasets`);
+    }
 
     // 显示切换成功提示
     // notify.success(t('CLUSTER_SWITCHED_SUCCESS', { cluster: value }));

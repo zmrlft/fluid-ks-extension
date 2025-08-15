@@ -321,7 +321,7 @@ const ResourceStatus = () => {
     // 导航到运行时详情页 - 在新窗口中打开，包含集群信息
     const currentCluster = getCurrentCluster();
     const namespace = get(detail, 'metadata.namespace');
-    const url = `/fluid/runtimes/${currentCluster}/${namespace}/${runtime.name}/resource-status`;
+    const url = `/fluid/${currentCluster}/${namespace}/runtimes/${runtime.name}/resource-status`;
     console.log('Opening runtime in new window:', runtime.name, 'in namespace:', namespace, 'cluster:', currentCluster);
     window.open(url, '_blank');
   };
