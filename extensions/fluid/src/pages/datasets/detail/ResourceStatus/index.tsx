@@ -9,6 +9,7 @@ import { Book2Duotone, RocketDuotone, StorageDuotone, AppstoreDuotone, FolderDuo
 import { get } from 'lodash';
 import styled from 'styled-components';
 import { SimpleCircle } from '@ks-console/shared';
+import { request, getCurrentCluster } from '../../../../utils/request';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -258,7 +259,7 @@ const ResourceStatus = () => {
     try {
       setVolumeLoading(true);
       const volumeName = `${namespace}-${datasetName}`;
-      const response = await fetch('/api/v1/persistentvolumes');
+      const response = await request('/api/v1/persistentvolumes');
 
       if (!response.ok) {
         throw new Error(`Failed to fetch persistent volumes: ${response.statusText}`);
@@ -279,7 +280,7 @@ const ResourceStatus = () => {
   const checkPvcExists = async (namespace: string, datasetName: string) => {
     try {
       setPvcLoading(true);
-      const response = await fetch(`/api/v1/namespaces/${namespace}/persistentvolumeclaims`);
+      const response = await request(`/api/v1/namespaces/${namespace}/persistentvolumeclaims`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch persistent volume claims: ${response.statusText}`);
@@ -317,30 +318,33 @@ const ResourceStatus = () => {
 
   // 处理运行时点击
   const handleRuntimeClick = (runtime: Runtime) => {
-    // 导航到运行时详情页 - 在新窗口中打开
+    // 导航到运行时详情页 - 在新窗口中打开，包含集群信息
+    const currentCluster = getCurrentCluster();
     const namespace = get(detail, 'metadata.namespace');
-    const url = `/fluid/runtimes/${namespace}/${runtime.name}/resource-status`;
-    console.log('Opening runtime in new window:', runtime.name, 'in namespace:', namespace);
+    const url = `/fluid/runtimes/${currentCluster}/${namespace}/${runtime.name}/resource-status`;
+    console.log('Opening runtime in new window:', runtime.name, 'in namespace:', namespace, 'cluster:', currentCluster);
     window.open(url, '_blank');
   };
 
   // 处理卷点击
   const handleVolumeClick = () => {
+    const currentCluster = getCurrentCluster();
     const namespace = get(detail, 'metadata.namespace');
     const datasetName = get(detail, 'metadata.name');
     const volumeName = `${namespace}-${datasetName}`;
-    const url = `/clusters/host/pv/${volumeName}/resource-status`;
-    console.log('Opening volume in new window:', volumeName);
+    const url = `/clusters/${currentCluster}/pv/${volumeName}/resource-status`;
+    console.log('Opening volume in new window:', volumeName, 'cluster:', currentCluster);
     window.open(url, '_blank');
   };
 
   // 处理PVC点击
   const handlePVCClick = () => {
+    const currentCluster = getCurrentCluster();
     const namespace = get(detail, 'metadata.namespace');
     const datasetName = get(detail, 'metadata.name');
     // 根据提供的路径格式: /clusters/host/projects/{namespace}/volumes/{pvcName}/resource-status
-    const url = `/clusters/host/projects/${namespace}/volumes/${datasetName}/resource-status`;
-    console.log('Opening PVC in new window:', datasetName, 'in namespace:', namespace);
+    const url = `/clusters/${currentCluster}/projects/${namespace}/volumes/${datasetName}/resource-status`;
+    console.log('Opening PVC in new window:', datasetName, 'in namespace:', namespace,'cluster:', currentCluster);
     window.open(url, '_blank');
   };
 

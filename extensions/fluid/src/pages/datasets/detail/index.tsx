@@ -9,6 +9,8 @@ import { useCacheStore as useStore } from '@ks-console/shared';
 import { DetailPagee } from '@ks-console/shared';
 import { get } from 'lodash';
 import { Book2Duotone } from '@kubed/icons';
+import { useClusterStore } from '../../../stores/cluster';
+import { request } from '../../../utils/request';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -68,11 +70,14 @@ interface Dataset {
 const DatasetDetail: React.FC = () => {
   const module = 'datasets';
   const authKey = module;
-  const { namespace, name } = useParams<{ namespace: string; name: string }>();
+  const { cluster, namespace, name } = useParams<{ cluster: string; namespace: string; name: string }>();
   const navigate = useNavigate();
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<boolean>(false);
+
+  // 集群状态管理
+  const { setCurrentCluster } = useClusterStore();
 
   // 存储详情页数据到全局状态
   const [, setDetailProps] = useStore('DatasetDetailProps', {
@@ -87,12 +92,19 @@ const DatasetDetail: React.FC = () => {
     return `/fluid/datasets`;
   }, []);
 
+  // 同步URL中的集群参数到状态
+  useEffect(() => {
+    if (cluster) {
+      setCurrentCluster(cluster);
+    }
+  }, [cluster, setCurrentCluster]);
+
   // 获取数据集详情
   useEffect(() => {
     const fetchDatasetDetail = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/apis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets/${name}`);
+        const response = await request(`/apis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets/${name}`);
         if (!response.ok) {
           throw new Error(`Failed to fetch dataset: ${response.statusText}`);
         }
@@ -110,7 +122,7 @@ const DatasetDetail: React.FC = () => {
     if (namespace && name) {
       fetchDatasetDetail();
     }
-  }, [namespace, name]);
+  }, [namespace, name, cluster]);
 
   // 更新全局状态
   useEffect(() => {
@@ -124,7 +136,7 @@ const DatasetDetail: React.FC = () => {
 
   // 定义标签页
   const tabs = useMemo(() => {
-    const path = `/fluid/datasets/${namespace}/${name}`;
+    const path = `/fluid/datasets/${cluster}/${namespace}/${name}`;
     return [
       {
         title: t('RESOURCE_STATUS'),
@@ -143,7 +155,7 @@ const DatasetDetail: React.FC = () => {
         path: `${path}/yaml`,
       },
     ];
-  }, [namespace, name]);
+  }, [cluster, namespace, name]);
 
   // 定义操作按钮
   const actions = () => {
