@@ -8,6 +8,7 @@ import DataSourceStep from './components/DataSourceStep';
 import DataLoadStep from './components/DataLoadStep';
 import YamlEditor from './components/YamlEditor';
 import { CreateDatasetModalProps, DatasetFormData, StepConfig } from './types';
+import { getCurrentCluster } from '../../../../utils/request';
 
 declare const t: (key: string, options?: any) => string;
 
@@ -195,11 +196,9 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
     }
   };
 
-  // 获取集群名称（默认为 'host'）
+  // 获取集群名称（使用当前选择的集群）
   const getClusterName = () => {
-    // 在KubeSphere环境中，集群名称通常是 'host'
-    // 如果需要动态获取，可以从全局配置或API获取
-    return 'host';
+    return getCurrentCluster();
   };
 
   // 创建单个资源的API调用
