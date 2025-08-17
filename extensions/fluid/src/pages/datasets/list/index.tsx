@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { get, debounce } from 'lodash';
-import { Button, Card, Banner, Select, Empty, Checkbox, notify } from '@kubed/components';
+import { Button, Card, Banner, Select, Empty, Checkbox } from '@kubed/components';
 import { DataTable, TableRef, StatusIndicator } from '@ks-console/shared';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Book2Duotone } from '@kubed/icons';
 import { transformRequestParams } from '../../../utils';
 import CreateDatasetModal from '../components/CreateDatasetModal';
+import { deleteResource, handleBatchResourceDelete } from '../../../utils/deleteResource';
 
 import { getApiPath, getWebSocketUrl, request } from '../../../utils/request';
 
@@ -406,58 +407,26 @@ const DatasetList: React.FC = () => {
   const isAllSelected = currentPageData.length > 0 && selectedDatasets.length === currentPageData.length;
   const isIndeterminate = selectedDatasets.length > 0 && selectedDatasets.length < currentPageData.length;
 
-
-
-  // 删除单个数据集
-  const deleteDataset = async (name: string, namespace: string) => {
-    try {
-      const response = await request(`/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets/${name}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error(`删除失败: ${response.status} ${response.statusText}`);
-      }
-
-      return true;
-    } catch (error) {
-      console.error('删除数据集失败:', error);
-      throw error;
-    }
-  };
-
-  // 批量删除数据集
+  // 批量删除数据集（使用通用删除函数）
   const handleBatchDelete = async () => {
     if (selectedDatasets.length === 0) {
       return;
     }
 
-    const confirmed = window.confirm(
-      `确定要删除选中的 ${selectedDatasets.length} 个数据集吗？此操作不可撤销。删除操作不会立马成功，请等待一会重新刷新表格`
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
     setIsDeleting(true);
     try {
-      // 并行删除所有选中的数据集
-      const deletePromises = selectedDatasets.map(dataset =>
-        deleteDataset(
-          get(dataset, 'metadata.name', ''),
-          get(dataset, 'metadata.namespace', '')
-        )
-      );
+      const resources = selectedDatasets.map(dataset => ({
+        name: get(dataset, 'metadata.name', ''),
+        namespace: get(dataset, 'metadata.namespace', '')
+      }));
 
-      await Promise.all(deletePromises);
-
-      notify.success(`成功删除 ${selectedDatasets.length} 个数据集`);
-      setSelectedDatasets([]);
-      //handleRefresh();
-    } catch (error) {
-      console.error('批量删除失败:', error);
-      notify.error('删除数据集失败，请重试');
+      await handleBatchResourceDelete(resources, {
+        resourceType: 'dataset',
+        onSuccess: () => {
+          setSelectedDatasets([]);
+          // 可以在这里添加刷新逻辑
+        }
+      });
     } finally {
       setIsDeleting(false);
     }
