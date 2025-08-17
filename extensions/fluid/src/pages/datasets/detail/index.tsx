@@ -155,10 +155,6 @@ const DatasetDetail: React.FC = () => {
         title: t('EVENTS'),
         path: `${path}/events`,
       },
-      {
-        title: t('YAML'),
-        path: `${path}/yaml`,
-      },
     ];
   }, [cluster, namespace, name]);
 

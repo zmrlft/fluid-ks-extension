@@ -9,7 +9,6 @@ import DatasetDetail from './index';
 import ResourceStatus from './ResourceStatus';
 import Metadata from './Metadata';
 import Events from './Events';
-import YAML from './YAML';
 
 const routes: RouteObject[] = [
   {
@@ -31,10 +30,6 @@ const routes: RouteObject[] = [
       {
         path: 'events',
         element: <Events />,
-      },
-      {
-        path: 'yaml',
-        element: <YAML />,
       },
     ],
   },
