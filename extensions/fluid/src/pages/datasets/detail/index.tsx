@@ -5,12 +5,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Loading, Button } from '@kubed/components';
-import { useCacheStore as useStore } from '@ks-console/shared';
+import { useCacheStore as useStore, yaml } from '@ks-console/shared';
 import { DetailPagee } from '@ks-console/shared';
 import { get } from 'lodash';
 import { Book2Duotone } from '@kubed/icons';
 
 import { request } from '../../../utils/request';
+import { EditYamlModal } from '@ks-console/shared';
+import { handleResourceDelete } from '../../../utils/deleteResource';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -69,12 +71,17 @@ interface Dataset {
 
 const DatasetDetail: React.FC = () => {
   const module = 'datasets';
-  const authKey = module;
   const { cluster, namespace, name } = useParams<{ cluster: string; namespace: string; name: string }>();
   const navigate = useNavigate();
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<boolean>(false);
+  const [editYamlConfig, setEditYamlConfig] = useState({
+    editResource: null,
+    visible: false,
+    yaml: '',
+    readOnly: true,
+  });
 
   // 从URL参数获取集群信息
   const currentCluster = cluster || 'host';
@@ -98,6 +105,7 @@ const DatasetDetail: React.FC = () => {
   // 获取数据集详情
   useEffect(() => {
     const fetchDatasetDetail = async () => {
+      console.log("fetchDatasetDetail被调用了")
       try {
         setLoading(true);
         const response = await request(`/apis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets/${name}`);
@@ -158,26 +166,39 @@ const DatasetDetail: React.FC = () => {
   const actions = () => {
     return [
       {
-        key: 'edit',
-        type: 'control',
-        text: t('EDIT'),
-        action: 'edit',
+        key: 'viewYaml',
+        text: t('VIEW_YAML'),
         onClick: () => {
-          // 编辑功能实现
-          console.log('Edit dataset:', name);
-          alert(t('EDIT_DATASET_DESC'));
+          setEditYamlConfig({
+            editResource: dataset as any,
+            yaml: yaml.getValue(dataset as any),
+            visible: true,
+            readOnly: true,
+          });
         },
       },
       {
         key: 'delete',
-        type: 'danger',
-        text: t('DELETE'),
-        action: 'delete',
-        onClick: () => {
-          // 删除功能实现
-          console.log('Delete dataset:', name);
-          alert(t('DELETE_DATASET_DESC'));
-        },
+        render: () => (
+          <Button
+            color="error"
+            onClick={() => {
+              if (!dataset) return;
+
+              handleResourceDelete({
+                resourceType: 'dataset',
+                name: dataset.metadata.name,
+                namespace: dataset.metadata.namespace,
+                onSuccess: () => {
+                  // 删除成功后跳转回列表页
+                  navigate(listUrl);
+                }
+              });
+            }}
+          >
+            {t('DELETE')}
+          </Button>
+        ),
       },
     ];
   };
@@ -235,7 +256,6 @@ const DatasetDetail: React.FC = () => {
           tabs={tabs}
           cardProps={{
             name: dataset?.metadata.name || '',
-            authKey,
             params: { namespace, name },
             desc: get(dataset, 'metadata.annotations["kubesphere.io/description"]', ''),
             actions: actions(),
@@ -246,6 +266,14 @@ const DatasetDetail: React.FC = () => {
             },
             icon: <Book2Duotone size={24}/>
           }}
+        />
+      )}
+      {editYamlConfig.visible && (
+        <EditYamlModal
+          visible={editYamlConfig.visible}
+          yaml={editYamlConfig.yaml}
+          readOnly={editYamlConfig.readOnly}
+          onCancel={() => setEditYamlConfig({ ...editYamlConfig, visible: false })}
         />
       )}
     </>
