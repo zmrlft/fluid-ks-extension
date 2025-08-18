@@ -240,10 +240,11 @@ const RuntimeList: React.FC = () => {
       debouncedRefresh();
   };
 
-  // 点击名称跳转详情页（预留）
+  // 点击名称跳转详情页
   const handleNameClick = (name: string, ns: string) => {
-    // TODO: 实现跳转详情页
-    alert(t('DATASET_NOT_FOUND_DESC'));
+    const clusterName = params.cluster || 'host';
+    const url = `/fluid/${clusterName}/${ns}/runtimes/${name}/resource-status`;
+    navigate(url);
   };
 
   // 格式化 Runtime 数据
