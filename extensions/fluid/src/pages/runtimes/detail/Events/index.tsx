@@ -1,23 +1,23 @@
 /*
- * Dataset Events component
+ * Runtime Events component
  */
 
 import React from 'react';
 import { useCacheStore as useStore } from '@ks-console/shared';
 import FluidEvents from '../../../../components/FluidEvents';
 
-const DatasetEvents = () => {
-  const [props] = useStore('DatasetDetailProps');
+const RuntimeEvents = () => {
+  const [props] = useStore('RuntimeDetailProps');
   const { detail, module } = props;
 
   return (
     <FluidEvents
       detail={detail}
-      module={module || 'datasets'}
-      resourceType="dataset"
-      loadingText="Loading dataset details..."
+      module={module || 'runtimes'}
+      resourceType="runtime"
+      loadingText="Loading runtime details..."
     />
   );
 };
 
-export default DatasetEvents;
+export default RuntimeEvents;
