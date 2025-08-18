@@ -5,6 +5,7 @@ import DatasetList from '../pages/datasets/list';
 import RuntimeList from '../pages/runtimes/list';
 import DataLoadList from '../pages/dataloads/list';
 import datasetDetailRoutes from '../pages/datasets/detail/routes';
+import runtimeDetailRoutes from '../pages/runtimes/detail/routes';
 
 export default [
   // 重定向根路径到默认集群
@@ -32,4 +33,5 @@ export default [
     ]
   },
   ...datasetDetailRoutes,
+  ...runtimeDetailRoutes,
 ];
