@@ -4,6 +4,7 @@ export interface DatasetFormData {
   namespace: string;
   description?: string;
   labels?: Record<string, string>;
+  annotations?: Record<string, string>; // 添加完整的annotations支持
   // 事实上这一部分对应的dataset的crd字段是：
   // metadata:
   //   name: string;
@@ -90,13 +91,22 @@ export interface DatasetFormData {
   //     namespace: default
   // 由于是和dataset绑定，所以spec.dataset字段无需用户填写
   
-  // 高级设置
-  // nodeAffinity?: any;
-  // tolerations?: any[];
-  // resources?: {
-  //   limits?: Record<string, string>;
-  //   requests?: Record<string, string>;
-  // };
+  // 高级设置 - 支持YAML模式的完整配置
+  // Dataset高级字段
+  owner?: any; // User类型
+  nodeAffinity?: any; // CacheableNodeAffinity类型
+  tolerations?: any[]; // Kubernetes Toleration数组
+  accessModes?: string[]; // PersistentVolumeAccessMode数组
+  placement?: string; // PlacementMode
+  dataRestoreLocation?: any; // DataRestoreLocation
+  sharedOptions?: Record<string, string>;
+  sharedEncryptOptions?: any[]; // EncryptOption数组
+
+  // Runtime高级字段 - 保存完整的Runtime spec
+  runtimeSpec?: any; // 用于保存YAML模式中的高级Runtime配置
+
+  // DataLoad高级字段 - 保存完整的DataLoad spec
+  dataLoadSpec?: any; // 用于保存YAML模式中的高级DataLoad配置
 }
 
 export type RuntimeType = 

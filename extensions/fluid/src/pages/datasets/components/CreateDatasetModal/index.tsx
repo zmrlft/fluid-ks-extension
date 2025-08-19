@@ -6,9 +6,10 @@ import BasicInfoStep from './components/BasicInfoStep';
 import RuntimeStep from './components/RuntimeStep';
 import DataSourceStep from './components/DataSourceStep';
 import DataLoadStep from './components/DataLoadStep';
-import YamlEditor from './components/YamlEditor';
+import { EditYamlModal } from '@ks-console/shared';
 import { CreateDatasetModalProps, DatasetFormData, StepConfig } from './types';
 import { getCurrentCluster } from '../../../../utils/request';
+import yaml from 'js-yaml';
 
 declare const t: (key: string, options?: any) => string;
 
@@ -153,6 +154,165 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
     enableDataLoad: false,
   });
 
+  // EditYamlModal状态管理
+  const [editYamlConfig, setEditYamlConfig] = useState({
+    visible: false,
+    yaml: '',
+    readOnly: false,
+  });
+
+  // 将表单数据转换为YAML
+  const formDataToYaml = (data: DatasetFormData) => {
+    // 构建annotations对象
+    const annotations: Record<string, string> = {
+      ...(data.annotations || {}), // 保留所有现有的annotations
+    };
+
+    // 如果有description，确保它在annotations中
+    // if (data.description) {
+    //   annotations['data.fluid.io/description'] = data.description;
+    // }
+
+    const dataset = {
+      apiVersion: 'data.fluid.io/v1alpha1',
+      kind: 'Dataset',
+      metadata: {
+        name: data.name || '',
+        namespace: data.namespace || 'default',
+        labels: data.labels || {},
+        ...(Object.keys(annotations).length > 0 && { annotations }),
+      },
+      spec: {
+        mounts: data.mounts || [],
+        runtimes: [
+          {
+            name: data.runtimeName || data.name || '',
+            namespace: data.namespace || 'default',
+          },
+        ],
+        // 添加Dataset的高级字段
+        ...(data.owner && { owner: data.owner }),
+        ...(data.nodeAffinity && { nodeAffinity: data.nodeAffinity }),
+        ...(data.tolerations && { tolerations: data.tolerations }),
+        ...(data.accessModes && { accessModes: data.accessModes }),
+        ...(data.placement && { placement: data.placement }),
+        ...(data.dataRestoreLocation && { dataRestoreLocation: data.dataRestoreLocation }),
+        ...(data.sharedOptions && { sharedOptions: data.sharedOptions }),
+        ...(data.sharedEncryptOptions && { sharedEncryptOptions: data.sharedEncryptOptions }),
+      },
+    };
+
+    const runtime = {
+      apiVersion: 'data.fluid.io/v1alpha1',
+      kind: data.runtimeType || 'AlluxioRuntime',
+      metadata: {
+        name: data.runtimeName || data.name || '',
+        namespace: data.namespace || 'default',
+      },
+      spec: data.runtimeSpec || {
+        replicas: data.replicas || 1,
+        tieredstore: data.tieredStore || {
+          levels: [
+            {
+              level: 0,
+              mediumtype: 'MEM',
+              quota: '1Gi',
+            },
+          ],
+        },
+      },
+    };
+
+    const resources = [dataset, runtime];
+
+    // 如果启用了数据预热，添加DataLoad资源
+    if (data.enableDataLoad && (data.dataLoadConfig || data.dataLoadSpec)) {
+      const dataLoad: any = {
+        apiVersion: 'data.fluid.io/v1alpha1',
+        kind: 'DataLoad',
+        metadata: {
+          name: `${data.name}-dataload`,
+          namespace: data.namespace || 'default',
+          labels: {},
+        },
+        spec: data.dataLoadSpec || {
+          dataset: {
+            name: data.name || '',
+            namespace: data.namespace || 'default',
+          },
+          loadMetadata: data.dataLoadConfig?.loadMetadata || true,
+          target: data.dataLoadConfig?.target || [],
+          policy: data.dataLoadConfig?.policy || 'Once',
+          ...(data.dataLoadConfig?.schedule && { schedule: data.dataLoadConfig.schedule }),
+        },
+      };
+      resources.push(dataLoad);
+    }
+
+    return resources.map(resource => yaml.dump(resource)).join('---\n');
+  };
+
+  // 将YAML转换为表单数据
+  const yamlToFormData = (yamlStr: string): DatasetFormData | null => {
+    try {
+      const documents = yamlStr.split('---').filter(doc => doc.trim());
+      const resources = documents.map(doc => yaml.load(doc.trim()));
+
+      const dataset = resources.find(r => r.kind === 'Dataset');
+      const runtime = resources.find(r => r.kind?.endsWith('Runtime'));
+      const dataLoad = resources.find(r => r.kind === 'DataLoad');
+
+      if (!dataset) {
+        throw new Error('Dataset resource not found');
+      }
+
+      // 处理annotations，确保description和annotations的一致性
+      const allAnnotations = dataset.metadata?.annotations || {};
+      const description = allAnnotations['data.fluid.io/description'] || '';
+
+      const formData: DatasetFormData = {
+        name: dataset.metadata?.name || '',
+        namespace: dataset.metadata?.namespace || 'default',
+        description,
+        labels: dataset.metadata?.labels || {},
+        annotations: allAnnotations, // 保存所有annotations
+        runtimeType: runtime?.kind || 'AlluxioRuntime',
+        runtimeName: runtime?.metadata?.name || '',
+        replicas: runtime?.spec?.replicas || 1,
+        tieredStore: runtime?.spec?.tieredstore,
+        mounts: dataset.spec?.mounts || [],
+        enableDataLoad: !!dataLoad,
+        dataLoadConfig: dataLoad ? {
+          loadMetadata: dataLoad.spec?.loadMetadata || true,
+          target: dataLoad.spec?.target || [],
+          policy: dataLoad.spec?.policy || 'Once',
+          schedule: dataLoad.spec?.schedule,
+        } : undefined,
+
+        // 保存Dataset的高级字段
+        owner: dataset.spec?.owner,
+        nodeAffinity: dataset.spec?.nodeAffinity,
+        tolerations: dataset.spec?.tolerations,
+        accessModes: dataset.spec?.accessModes,
+        placement: dataset.spec?.placement,
+        dataRestoreLocation: dataset.spec?.dataRestoreLocation,
+        sharedOptions: dataset.spec?.sharedOptions,
+        sharedEncryptOptions: dataset.spec?.sharedEncryptOptions,
+
+        // 保存完整的Runtime spec（用于高级配置）
+        runtimeSpec: runtime?.spec,
+
+        // 保存完整的DataLoad spec（用于高级配置）
+        dataLoadSpec: dataLoad?.spec,
+      };
+
+      return formData;
+    } catch (err) {
+      console.error('YAML parsing error:', err);
+      return null;
+    }
+  };
+
   // 更新表单数据
   const handleDataChange = useCallback((data: Partial<DatasetFormData>) => {
     setFormData(prev => {
@@ -172,6 +332,49 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
       [stepIndex]: isValid,
     }));
   }, []);
+
+  // 处理YAML模式切换
+  const handleYamlModeChange = (yamlMode: boolean) => {
+    setIsYamlMode(yamlMode);
+    if (yamlMode) {
+      // 切换到YAML模式时，生成YAML并显示EditYamlModal
+      const yamlContent = formDataToYaml(formData);
+      setEditYamlConfig({
+        visible: true,
+        yaml: yamlContent,
+        readOnly: false,
+      });
+    } else {
+      // 切换回表单模式时，关闭EditYamlModal
+      setEditYamlConfig(prev => ({ ...prev, visible: false }));
+    }
+  };
+
+  // 处理YAML保存
+  const handleYamlSave = (yamlContent: string) => {
+    try {
+      const newFormData = yamlToFormData(yamlContent);
+      if (newFormData) {
+        setFormData(newFormData);
+        setEditYamlConfig(prev => ({ ...prev, visible: false }));
+        // 关闭YAML模式，回到表单模式
+        setIsYamlMode(false);
+        // 设置YAML模式验证为有效
+        setStepValidations(prev => ({ ...prev, [-1]: true }));
+      } else {
+        notify.error(t('YAML_PARSE_ERROR') || 'YAML parsing failed');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      notify.error(`${t('YAML_PARSE_ERROR') || 'YAML parsing failed'}: ${errorMessage}`);
+    }
+  };
+
+  // 处理YAML取消
+  const handleYamlCancel = () => {
+    setEditYamlConfig(prev => ({ ...prev, visible: false }));
+    setIsYamlMode(false);
+  };
 
   // 下一步
   const handleNext = () => {
@@ -239,6 +442,16 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
     const resources: any[] = [];
 
     // 创建Dataset资源
+    // 构建annotations对象，包含所有用户自定义的annotations
+    const annotations: Record<string, string> = {
+      ...(data.annotations || {}), // 保留所有现有的annotations
+    };
+
+    // 如果有description，确保它在annotations中
+    if (data.description) {
+      annotations['data.fluid.io/description'] = data.description;
+    }
+
     const dataset = {
       apiVersion: 'data.fluid.io/v1alpha1',
       kind: 'Dataset',
@@ -246,11 +459,7 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
         name: data.name,
         namespace: data.namespace,
         labels: data.labels || {},
-        ...(data.description && {
-          annotations: {
-            'data.fluid.io/description': data.description,
-          },
-        }),
+        ...(Object.keys(annotations).length > 0 && { annotations }),
       },
       spec: {
         mounts: data.mounts || [],
@@ -260,6 +469,15 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
             namespace: data.namespace,
           },
         ],
+        // 添加Dataset的高级字段
+        ...(data.owner && { owner: data.owner }),
+        ...(data.nodeAffinity && { nodeAffinity: data.nodeAffinity }),
+        ...(data.tolerations && { tolerations: data.tolerations }),
+        ...(data.accessModes && { accessModes: data.accessModes }),
+        ...(data.placement && { placement: data.placement }),
+        ...(data.dataRestoreLocation && { dataRestoreLocation: data.dataRestoreLocation }),
+        ...(data.sharedOptions && { sharedOptions: data.sharedOptions }),
+        ...(data.sharedEncryptOptions && { sharedEncryptOptions: data.sharedEncryptOptions }),
       },
     };
     resources.push(dataset);
@@ -272,14 +490,14 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
         name: data.runtimeName || data.name,
         namespace: data.namespace,
       },
-      spec: {
+      spec: data.runtimeSpec || {
         replicas: data.replicas || 1,
         tieredstore: data.tieredStore || {
           levels: [
             {
               level: 0,
               mediumtype: 'MEM',
-              quota: '2Gi',
+              quota: '1Gi',
             },
           ],
         },
@@ -288,7 +506,7 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
     resources.push(runtime);
 
     // 如果启用了数据预热，创建DataLoad资源
-    if (data.enableDataLoad && data.dataLoadConfig) {
+    if (data.enableDataLoad && (data.dataLoadConfig || data.dataLoadSpec)) {
       const dataLoad = {
         apiVersion: 'data.fluid.io/v1alpha1',
         kind: 'DataLoad',
@@ -296,15 +514,15 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
           name: `${data.name}-dataload`,
           namespace: data.namespace,
         },
-        spec: {
+        spec: data.dataLoadSpec || {
           dataset: {
             name: data.name,
             namespace: data.namespace,
           },
-          loadMetadata: data.dataLoadConfig.loadMetadata,
-          target: data.dataLoadConfig.target || [],
-          policy: data.dataLoadConfig.policy || 'Once',
-          ...(data.dataLoadConfig.schedule && { schedule: data.dataLoadConfig.schedule }),
+          loadMetadata: data.dataLoadConfig?.loadMetadata || true,
+          target: data.dataLoadConfig?.target || [],
+          policy: data.dataLoadConfig?.policy || 'Once',
+          ...(data.dataLoadConfig?.schedule && { schedule: data.dataLoadConfig.schedule }),
         },
       };
       resources.push(dataLoad);
@@ -313,21 +531,7 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
     return resources;
   };
 
-  // 从YAML内容创建资源
-  const createFromYaml = async (yamlContent: string) => {
-    const yaml = await import('js-yaml');
-    const documents = yamlContent.split('---').filter(doc => doc.trim());
-    const resources = documents.map(doc => yaml.load(doc.trim()));
 
-    // 按顺序创建资源
-    for (const resource of resources) {
-      if (resource && typeof resource === 'object' && 'kind' in resource && 'metadata' in resource) {
-        console.log(`Creating ${resource.kind}:`, resource);
-        await createResource(resource, resource.metadata.namespace || formData.namespace);
-        console.log(`Successfully created ${resource.kind}: ${resource.metadata.name}`);
-      }
-    }
-  };
 
   // 创建数据集
   const handleCreate = async () => {
@@ -336,13 +540,15 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
       console.log('Creating dataset with data:', formData);
 
       if (isYamlMode) {
-        // YAML模式：从YamlEditor获取YAML内容并创建
-        // 注意：这里需要从YamlEditor组件获取当前的YAML内容
-        // 由于YamlEditor已经验证了YAML并更新了formData，我们可以重新生成YAML
-        const yaml = await import('js-yaml');
+        // YAML模式：使用当前的formData生成资源并创建
         const resources = formDataToResources(formData);
-        const yamlContent = resources.map(resource => yaml.dump(resource)).join('---\n');
-        await createFromYaml(yamlContent);
+
+        // 按顺序创建资源：先创建Dataset，再创建Runtime，最后创建DataLoad
+        for (const resource of resources) {
+          console.log(`Creating ${resource.kind}:`, resource);
+          await createResource(resource, formData.namespace);
+          console.log(`Successfully created ${resource.kind}: ${resource.metadata.name}`);
+        }
       } else {
         // 表单模式：将表单数据转换为资源对象
         const resources = formDataToResources(formData);
@@ -390,7 +596,7 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
     onCancel();
   };
 
-  const currentStepValid = stepValidations[currentStep] !== false;
+  const currentStepValid = isYamlMode ? stepValidations[-1] !== false : stepValidations[currentStep] !== false;
   const isLastStep = currentStep === STEPS.length - 1;
   const isFirstStep = currentStep === 0;
   const currentStepConfig = STEPS[currentStep];
@@ -416,20 +622,14 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
               <YamlModeLabel>{t('YAML_MODE')}</YamlModeLabel>
               <Switch
                 checked={isYamlMode}
-                onChange={setIsYamlMode}
+                onChange={handleYamlModeChange}
               />
             </YamlModeContainer>
           </HeaderActions>
         </ModalHeader>
 
         <ModalBody>
-          {isYamlMode ? (
-            <YamlEditor
-              formData={formData}
-              onDataChange={handleDataChange}
-              onValidationChange={(isValid) => handleValidationChange(-1, isValid)}
-            />
-          ) : (
+          {!isYamlMode && (
             <>
               <StepIndicatorContainer>
                 <StepIndicator
@@ -494,6 +694,18 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
           </FooterRight>
         </ModalFooter>
       </ModalContent>
+
+      {/* EditYamlModal for YAML editing */}
+      {editYamlConfig.visible && (
+        <EditYamlModal
+          visible={editYamlConfig.visible}
+          yaml={editYamlConfig.yaml}
+          readOnly={editYamlConfig.readOnly}
+          onOk={handleYamlSave}
+          onCancel={handleYamlCancel}
+          confirmLoading={isCreating}
+        />
+      )}
     </Modal>
   );
 };
