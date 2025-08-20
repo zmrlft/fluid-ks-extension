@@ -126,6 +126,7 @@ export interface StepConfig {
   description: string;
   component: React.ComponentType<StepComponentProps>;
   optional?: boolean;
+  icon?: React.ReactNode;
 }
 
 export const RUNTIME_TYPE_OPTIONS = [

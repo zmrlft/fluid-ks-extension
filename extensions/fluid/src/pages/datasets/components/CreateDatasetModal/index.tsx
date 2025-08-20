@@ -1,7 +1,30 @@
 import React, { useState, useCallback } from 'react';
-import { Button, Modal, Switch, notify } from '@kubed/components';
+import { Button, Modal, Switch, notify, Steps, TabStep } from '@kubed/components';
+import { Database, Cogwheel, RocketDuotone, DownloadDuotone, FolderDuotone, Book2Duotone } from '@kubed/icons';
 import styled from 'styled-components';
-import StepIndicator from './components/StepIndicator';
+
+const ModalContent = styled.div`
+  max-height: calc(80vh - 120px);
+  overflow-y: auto;
+  position: relative;
+  z-index: 1;
+
+  .kubed-steps {
+    position: relative;
+    z-index: 1;
+  }
+
+  .kubed-tab-step {
+    position: relative;
+    z-index: 1;
+  }
+
+  input, textarea, select, .kubed-select {
+    pointer-events: auto !important;
+    position: relative;
+    z-index: 2;
+  }
+`;
 import BasicInfoStep from './components/BasicInfoStep';
 import RuntimeStep from './components/RuntimeStep';
 import DataSourceStep from './components/DataSourceStep';
@@ -12,123 +35,34 @@ import { getCurrentCluster } from '../../../../utils/request';
 
 declare const t: (key: string, options?: any) => string;
 
-const ModalContent = styled.div`
-  width: 910px;
-  max-height: 80vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-`;
-
-const ModalHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px 16px 24px;
-  background-color: #fff;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-`;
-
-const HeaderLeft = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-`;
-
-const HeaderTitle = styled.h2`
-  font-size: 20px;
-  font-weight: 600;
-  color: #242e42;
-  margin: 0;
-`;
-
-const HeaderActions = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-`;
-
-const YamlModeLabel = styled.span`
-  font-size: 14px;
-  color: #79879c;
-  font-weight: 500;
-`;
-
-const YamlModeContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: #f5f7fa;
-  }
-`;
-
-const ModalBody = styled.div`
-  flex: 1;
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
-`;
-
-const StepIndicatorContainer = styled.div`
-  position: sticky;
-  top: 0;
-  background-color: #fff;
-  z-index: 9;
-`;
-
-const StepContent = styled.div`
-  flex: 1;
-  overflow-y: auto;
-`;
-
-const ModalFooter = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  background-color: #fff;
-`;
-
-const FooterLeft = styled.div``;
-
-const FooterRight = styled.div`
-  display: flex;
-  gap: 12px;
-`;
-
-
-
 const STEPS: StepConfig[] = [
   {
     key: 'basic',
     title: 'BASIC_INFORMATION',
     description: 'BASIC_INFO_DESC',
     component: BasicInfoStep,
+    icon: <Book2Duotone size={24} />,
   },
   {
     key: 'datasource',
     title: 'DATA_SOURCE_CONFIGURATION',
     description: 'DATA_SOURCE_CONFIG_DESC',
     component: DataSourceStep,
+    icon: <FolderDuotone size={24} />,
   },
   {
     key: 'runtime',
     title: 'RUNTIME_CONFIGURATION',
     description: 'RUNTIME_CONFIG_DESC',
     component: RuntimeStep,
+    icon: <RocketDuotone size={24} />,
   },
   {
     key: 'dataload',
     title: 'DATA_PRELOAD_CONFIGURATION',
     description: 'DATA_PRELOAD_CONFIG_DESC',
     component: DataLoadStep,
+    icon: <DownloadDuotone size={24} />,
     optional: true,
   },
 ];
@@ -172,6 +106,52 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
       [stepIndex]: isValid,
     }));
   }, []);
+
+  // 渲染Modal footer
+  const renderStepsModalFooter = () => {
+    const isFirstStep = currentStep === 0;
+    const isLastStep = currentStep === STEPS.length - 1;
+    const currentStepValid = stepValidations[currentStep] !== false;
+    const currentStepConfig = STEPS[currentStep];
+
+    return (
+      <>
+        <Button variant="outline" onClick={handleClose}>
+          {t('CANCEL')}
+        </Button>
+        {!isFirstStep && (
+          <Button variant="outline" onClick={handlePrevious}>
+            {t('PREVIOUS')}
+          </Button>
+        )}
+        {currentStepConfig?.optional && !isLastStep &&(
+          <Button variant="text" onClick={handleSkip}>
+            {t('SKIP')}
+          </Button>
+        )}
+        {!isLastStep && (
+          <Button
+            variant="filled"
+            onClick={handleNext}
+            disabled={!currentStepValid}
+          >
+            {t('NEXT')}
+          </Button>
+        )}
+        {isLastStep && (
+          <Button
+            variant="filled"
+            color="success"
+            onClick={handleCreate}
+            disabled={!currentStepValid}
+            loading={isCreating}
+          >
+            {t('CREATE')}
+          </Button>
+        )}
+      </>
+    );
+  };
 
   // 下一步
   const handleNext = () => {
@@ -390,109 +370,79 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
     onCancel();
   };
 
-  const currentStepValid = stepValidations[currentStep] !== false;
-  const isLastStep = currentStep === STEPS.length - 1;
-  const isFirstStep = currentStep === 0;
-  const currentStepConfig = STEPS[currentStep];
-
   return (
     <Modal
-      title={t('CREATE_DATASET')}
-      visible={visible}
-      onCancel={handleClose}
-      width="auto"
-      footer={null}
-      closable={true}
-      maskClosable={false}
-    >
-      <ModalContent>
-        <ModalHeader>
-          <HeaderLeft>
-            <HeaderTitle>{t('API_REFERENCE')}</HeaderTitle>
-            <a href="https://github.com/fluid-cloudnative/fluid/blob/master/docs/en/dev/api_doc.md" target="_blank">^_^</a>
-          </HeaderLeft>
-          <HeaderActions>
-            <YamlModeContainer>
-              <YamlModeLabel>{t('YAML_MODE')}</YamlModeLabel>
+      title={
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingRight: '40px' }}>
+          <span>{t('CREATE_DATASET')}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <a
+              href="https://github.com/fluid-cloudnative/fluid/blob/master/docs/en/dev/api_doc.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: '#3385ff', textDecoration: 'none', fontSize: '14px' }}
+            >
+              Fluid api 文档参考 ^_^
+            </a>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'absolute', right: 70, top: 20 }}>
+              <span style={{ fontSize: '14px', color: '#79879c' }}>{t('YAML_MODE')}</span>
               <Switch
                 checked={isYamlMode}
                 onChange={setIsYamlMode}
               />
-            </YamlModeContainer>
-          </HeaderActions>
-        </ModalHeader>
-
-        <ModalBody>
-          {isYamlMode ? (
-            <YamlEditor
-              formData={formData}
-              onDataChange={handleDataChange}
-              onValidationChange={(isValid) => handleValidationChange(-1, isValid)}
-            />
-          ) : (
-            <>
-              <StepIndicatorContainer>
-                <StepIndicator
-                  steps={STEPS}
-                  currentStep={currentStep}
-                  completedSteps={completedSteps}
+            </div>
+          </div>
+        </div>
+      }
+      visible={visible}
+      onCancel={handleClose}
+      width={960}
+      style={{ height: '80vh', maxHeight: '800px' }}
+      footer={isYamlMode ? (
+        <>
+          <Button variant="outline" onClick={handleClose}>
+            {t('CANCEL')}
+          </Button>
+          <Button
+            variant="filled"
+            color="success"
+            onClick={handleCreate}
+            loading={isCreating}
+          >
+            {t('CREATE')}
+          </Button>
+        </>
+      ) : renderStepsModalFooter()}
+      closable={true}
+      maskClosable={false}
+    >
+      <ModalContent>
+        {isYamlMode ? (
+          <YamlEditor
+            formData={formData}
+            onDataChange={handleDataChange}
+            onValidationChange={(isValid) => handleValidationChange(-1, isValid)}
+          />
+        ) : (
+          <Steps active={currentStep} variant="tab">
+            {STEPS.map((step, index) => (
+              <TabStep
+                key={step.key}
+                label={t(step.title)}
+                description={t(step.description)}
+                completedDescription={t('FINISHED')}
+                progressDescription={t('IN_PROGRESS')}
+                icon={step.icon}
+              >
+                <step.component
+                  formData={formData}
+                  onDataChange={handleDataChange}
+                  onValidationChange={(isValid: boolean) => handleValidationChange(index, isValid)}
                 />
-              </StepIndicatorContainer>
-              <StepContent>
-                {(() => {
-                  const Component = currentStepConfig.component;
-                  return (
-                    <Component
-                      formData={formData}
-                      onDataChange={handleDataChange}
-                      onValidationChange={(isValid: boolean) => handleValidationChange(currentStep, isValid)}
-                    />
-                  );
-                })()}
-              </StepContent>
-            </>
-          )}
-        </ModalBody>
-
-        <ModalFooter>
-          <FooterLeft>
-            {!isYamlMode && currentStepConfig.optional && (
-              <Button variant="text" onClick={handleSkip}>
-                {t('SKIP_STEP')}
-              </Button>
-            )}
-          </FooterLeft>
-          <FooterRight>
-            <Button variant="outline" onClick={handleClose}>
-              {t('CANCEL')}
-            </Button>
-            {!isYamlMode && !isFirstStep && (
-              <Button variant="outline" onClick={handlePrevious}>
-                {t('PREVIOUS')}
-              </Button>
-            )}
-            {!isYamlMode && !isLastStep && (
-              <Button
-                variant="filled"
-                onClick={handleNext}
-                disabled={!currentStepValid}
-              >
-                {t('NEXT')}
-              </Button>
-            )}
-            {(isYamlMode || isLastStep) && (
-              <Button
-                variant="filled"
-                color="success"
-                onClick={handleCreate}
-                disabled={!currentStepValid}
-                loading={isCreating}
-              >
-                {t('CREATE')}
-              </Button>
-            )}
-          </FooterRight>
-        </ModalFooter>
+              </TabStep>
+            ))}
+          </Steps>
+        )}
       </ModalContent>
     </Modal>
   );
