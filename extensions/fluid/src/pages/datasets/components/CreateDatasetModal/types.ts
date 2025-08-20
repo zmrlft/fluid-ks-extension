@@ -4,22 +4,30 @@ export interface DatasetFormData {
   namespace: string;
   description?: string;
   labels?: Record<string, string>;
+  // 新增：完整的annotations支持，不仅仅是description
+  annotations?: Record<string, string>;
   // 事实上这一部分对应的dataset的crd字段是：
   // metadata:
   //   name: string;
   //   namespace: string;
-  //   annotations?: {
-  //     description?: string;
-  //   };
+  //   annotations?: Record<string, string>; // 支持用户自定义的任意annotations
   //   labels?: Record<string, string>;
-  
+
   // 运行时配置
   runtimeType: RuntimeType;
   runtimeName: string; // 自动设置为数据集名称（fluid官网里的视频提到dataset和runtime名称要一样）
   replicas: number;
+  // 新增：完整的Runtime spec支持，保存用户在YAML中编辑的所有字段
+  runtimeSpec?: Record<string, any>;
   // 对应的是runtime的crd字段是：
   // spec:
   //   replicas: number;
+  //   master?: {...};
+  //   worker?: {...};
+  //   fuse?: {...};
+  //   properties?: {...};
+  //   jvmOptions?: [...];
+  //   ... 以及其他复杂的嵌套字段
   // 这些运行时的 replicas 字段均用于定义分布式缓存系统中工作节点的数量，直接影响数据缓存和处理的并行能力 (有必要向ui用户说明)
   
   // 存储配置
@@ -81,22 +89,37 @@ export interface DatasetFormData {
     policy?: 'Once' | 'Cron' | 'OnEvent';
     schedule?: string;
   };
+  // 新增：完整的DataLoad spec支持，保存用户在YAML中编辑的所有字段
+  dataLoadSpec?: Record<string, any>;
   // 对应dataload 的crd字段是
   // metadata:
-  //   name: 
+  //   name:
+  //   annotations?: Record<string, string>; // 支持用户自定义annotations
+  //   labels?: Record<string, string>; // 支持用户自定义labels
   // spec:
   //   dataset:
-  //     name: 
+  //     name:
   //     namespace: default
+  //   loadMetadata?: boolean;
+  //   target?: [...];
+  //   policy?: string;
+  //   schedule?: string;
+  //   ... 以及其他高级字段
   // 由于是和dataset绑定，所以spec.dataset字段无需用户填写
   
-  // 高级设置
-  // nodeAffinity?: any;
-  // tolerations?: any[];
-  // resources?: {
-  //   limits?: Record<string, string>;
-  //   requests?: Record<string, string>;
-  // };
+  // Dataset高级设置 - 这些字段在API文档中定义但UI暂未支持，可通过YAML编辑
+  // 以下字段将通过完整的Dataset spec支持，用户可在YAML模式下编辑：
+  // owner?: User;                    // 数据集所有者
+  // nodeAffinity?: CacheableNodeAffinity;  // 节点亲和性约束
+  // tolerations?: Toleration[];      // 容忍度设置
+  // accessModes?: PersistentVolumeAccessMode[];  // 访问模式
+  // placement?: PlacementMode;       // 放置模式（多数据集单节点部署开关）
+  // dataRestoreLocation?: DataRestoreLocation;  // 数据恢复位置
+  // sharedOptions?: Record<string, string>;     // 共享选项
+  // sharedEncryptOptions?: EncryptOption[];    // 共享加密选项
+
+  // 新增：完整的Dataset spec支持，保存用户在YAML中编辑的所有字段
+  datasetSpec?: Record<string, any>;
 }
 
 export type RuntimeType = 

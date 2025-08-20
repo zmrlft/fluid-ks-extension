@@ -219,6 +219,26 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
     const resources: any[] = [];
 
     // 创建Dataset资源
+    // 构建annotations，合并description和用户自定义的annotations
+    const annotations: Record<string, string> = { ...(data.annotations || {}) };
+    if (data.description) {
+      annotations['data.fluid.io/description'] = data.description;
+    }
+
+    // 构建Dataset spec，优先使用完整的datasetSpec，然后用UI字段覆盖
+    const datasetSpec = {
+      // 先使用用户在YAML中编辑的完整spec
+      ...(data.datasetSpec || {}),
+      // UI字段优先级更高，覆盖YAML中的对应字段
+      mounts: data.mounts || [],
+      runtimes: [
+        {
+          name: data.runtimeName || data.name,
+          namespace: data.namespace,
+        },
+      ],
+    };
+
     const dataset = {
       apiVersion: 'data.fluid.io/v1alpha1',
       kind: 'Dataset',
@@ -226,25 +246,32 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
         name: data.name,
         namespace: data.namespace,
         labels: data.labels || {},
-        ...(data.description && {
-          annotations: {
-            'data.fluid.io/description': data.description,
-          },
-        }),
+        ...(Object.keys(annotations).length > 0 && { annotations }),
       },
-      spec: {
-        mounts: data.mounts || [],
-        runtimes: [
-          {
-            name: data.runtimeName || data.name,
-            namespace: data.namespace,
-          },
-        ],
-      },
+      spec: datasetSpec,
     };
     resources.push(dataset);
 
     // 创建Runtime资源
+    // 构建Runtime spec，优先使用完整的runtimeSpec，然后用UI字段覆盖
+    const defaultTieredStore = {
+      levels: [
+        {
+          level: 0,
+          mediumtype: 'MEM',
+          quota: '2Gi',
+        },
+      ],
+    };
+
+    const runtimeSpec = {
+      // 先使用用户在YAML中编辑的完整spec
+      ...(data.runtimeSpec || {}),
+      // UI字段优先级更高，覆盖YAML中的对应字段
+      replicas: data.replicas || 1,
+      tieredstore: data.tieredStore || defaultTieredStore,
+    };
+
     const runtime = {
       apiVersion: 'data.fluid.io/v1alpha1',
       kind: data.runtimeType,
@@ -252,23 +279,28 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
         name: data.runtimeName || data.name,
         namespace: data.namespace,
       },
-      spec: {
-        replicas: data.replicas || 1,
-        tieredstore: data.tieredStore || {
-          levels: [
-            {
-              level: 0,
-              mediumtype: 'MEM',
-              quota: '2Gi',
-            },
-          ],
-        },
-      },
+      spec: runtimeSpec,
     };
     resources.push(runtime);
 
     // 如果启用了数据预热，创建DataLoad资源
     if (data.enableDataLoad && data.dataLoadConfig) {
+      // 构建DataLoad spec，优先使用完整的dataLoadSpec，然后用UI字段覆盖
+      const dataLoadSpec = {
+        // 先使用用户在YAML中编辑的完整spec
+        ...(data.dataLoadSpec || {}),
+        // 固定字段：dataset绑定
+        dataset: {
+          name: data.name,
+          namespace: data.namespace,
+        },
+        // UI字段优先级更高，覆盖YAML中的对应字段
+        loadMetadata: data.dataLoadConfig.loadMetadata,
+        target: data.dataLoadConfig.target || [],
+        policy: data.dataLoadConfig.policy || 'Once',
+        ...(data.dataLoadConfig.schedule && { schedule: data.dataLoadConfig.schedule }),
+      };
+
       const dataLoad = {
         apiVersion: 'data.fluid.io/v1alpha1',
         kind: 'DataLoad',
@@ -276,16 +308,7 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
           name: `${data.name}-dataload`,
           namespace: data.namespace,
         },
-        spec: {
-          dataset: {
-            name: data.name,
-            namespace: data.namespace,
-          },
-          loadMetadata: data.dataLoadConfig.loadMetadata,
-          target: data.dataLoadConfig.target || [],
-          policy: data.dataLoadConfig.policy || 'Once',
-          ...(data.dataLoadConfig.schedule && { schedule: data.dataLoadConfig.schedule }),
-        },
+        spec: dataLoadSpec,
       };
       resources.push(dataLoad);
     }

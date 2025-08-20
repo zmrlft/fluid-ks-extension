@@ -122,6 +122,7 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
     const targetsToUse = newTargets || targets;
     const valuesToUse = newFormValues || formValues;
 
+    // 只更新DataLoad基本配置，保留完整的dataLoadSpec
     onDataChange({
       enableDataLoad: valuesToUse.enableDataLoad,
       dataLoadConfig: valuesToUse.enableDataLoad ? {
@@ -130,6 +131,7 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
         policy: valuesToUse.policy,
         schedule: valuesToUse.policy === 'Cron' ? valuesToUse.schedule : undefined,
       } : undefined,
+      // 保留现有的dataLoadSpec配置
     });
 
     // 如果启用了数据预热，验证至少有一个有效的目标路径
@@ -213,7 +215,7 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
               </div>
             </Col>
             <Col span={3} >
-              <div style={{ marginBottom: '16px', display: 'none'}}>
+              <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
                   {t('PRELOAD_POLICY')}
                 </label>

@@ -106,11 +106,12 @@ const RuntimeStep: React.FC<StepComponentProps> = ({
     const newValues = { ...formValues, [field]: value };
     setFormValues(newValues);
 
+    // 只更新Runtime基本字段，保留完整的runtimeSpec
     onDataChange({
       runtimeType: newValues.runtimeType as any,
       runtimeName: formData.name, // 强制与数据集名称一致
       replicas: newValues.replicas,
-      // 移除 tieredStore 的重置，保留现有配置
+      // 保留现有的tieredStore和runtimeSpec配置
     });
 
     // 验证表单
