@@ -220,6 +220,7 @@ const BasicInfoStep: React.FC<StepComponentProps> = ({
     const newValues = { ...formValues, [field]: value };
     setFormValues(newValues);
 
+    // 只更新基本信息字段，保留其他字段（如annotations、runtimeSpec等）
     onDataChange({
       name: newValues.name,
       namespace: newValues.namespace,

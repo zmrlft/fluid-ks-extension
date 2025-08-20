@@ -55,6 +55,26 @@ const YamlEditor: React.FC<YamlEditorProps> = ({
 
   // 将表单数据转换为YAML
   const formDataToYaml = (data: DatasetFormData) => {
+    // 构建annotations，合并description和用户自定义的annotations
+    const annotations: Record<string, string> = { ...(data.annotations || {}) };
+    if (data.description) {
+      annotations['data.fluid.io/description'] = data.description;
+    }
+
+    // 构建Dataset spec，优先使用完整的datasetSpec，然后用UI字段覆盖
+    const datasetSpec = {
+      // 先使用用户在YAML中编辑的完整spec
+      ...(data.datasetSpec || {}),
+      // UI字段优先级更高，覆盖YAML中的对应字段
+      mounts: data.mounts || [],
+      runtimes: [
+        {
+          name: data.runtimeName || data.name || '',
+          namespace: data.namespace || 'default',
+        },
+      ],
+    };
+
     const dataset = {
       apiVersion: 'data.fluid.io/v1alpha1',
       kind: 'Dataset',
@@ -62,21 +82,28 @@ const YamlEditor: React.FC<YamlEditorProps> = ({
         name: data.name || '',
         namespace: data.namespace || 'default',
         labels: data.labels || {},
-        ...(data.description && {
-          annotations: {
-            'data.fluid.io/description': data.description,
-          },
-        }),
+        ...(Object.keys(annotations).length > 0 && { annotations }),
       },
-      spec: {
-        mounts: data.mounts || [],
-        runtimes: [
-          {
-            name: data.runtimeName || data.name || '',
-            namespace: data.namespace || 'default',
-          },
-        ],
-      },
+      spec: datasetSpec,
+    };
+
+    // 构建Runtime，优先使用完整的runtimeSpec，然后用UI字段覆盖
+    const defaultTieredStore = {
+      levels: [
+        {
+          level: 0,
+          mediumtype: 'MEM',
+          quota: '2Gi',
+        },
+      ],
+    };
+
+    const runtimeSpec = {
+      // 先使用用户在YAML中编辑的完整spec
+      ...(data.runtimeSpec || {}),
+      // UI字段优先级更高，覆盖YAML中的对应字段
+      replicas: data.replicas || 1,
+      tieredstore: data.tieredStore || defaultTieredStore,
     };
 
     const runtime = {
@@ -86,24 +113,29 @@ const YamlEditor: React.FC<YamlEditorProps> = ({
         name: data.runtimeName || data.name || '',
         namespace: data.namespace || 'default',
       },
-      spec: {
-        replicas: data.replicas || 1,
-        tieredstore: data.tieredStore || {
-          levels: [
-            {
-              level: 0,
-              mediumtype: 'MEM',
-              quota: '2Gi',
-            },
-          ],
-        },
-      },
+      spec: runtimeSpec,
     };
 
     const resources = [dataset, runtime];
 
     // 如果启用了数据预热，添加DataLoad资源
     if (data.enableDataLoad && data.dataLoadConfig) {
+      // 构建DataLoad spec，优先使用完整的dataLoadSpec，然后用UI字段覆盖
+      const dataLoadSpec = {
+        // 先使用用户在YAML中编辑的完整spec
+        ...(data.dataLoadSpec || {}),
+        // 固定字段：dataset绑定
+        dataset: {
+          name: data.name || '',
+          namespace: data.namespace || 'default',
+        },
+        // UI字段优先级更高，覆盖YAML中的对应字段
+        loadMetadata: data.dataLoadConfig.loadMetadata,
+        target: data.dataLoadConfig.target || [],
+        policy: data.dataLoadConfig.policy || 'Once',
+        ...(data.dataLoadConfig.schedule && { schedule: data.dataLoadConfig.schedule }),
+      };
+
       const dataLoad: any = {
         apiVersion: 'data.fluid.io/v1alpha1',
         kind: 'DataLoad',
@@ -112,16 +144,7 @@ const YamlEditor: React.FC<YamlEditorProps> = ({
           namespace: data.namespace || 'default',
           labels: {},
         },
-        spec: {
-          dataset: {
-            name: data.name || '',
-            namespace: data.namespace || 'default',
-          },
-          loadMetadata: data.dataLoadConfig.loadMetadata,
-          target: data.dataLoadConfig.target || [],
-          policy: data.dataLoadConfig.policy || 'Once',
-          ...(data.dataLoadConfig.schedule && { schedule: data.dataLoadConfig.schedule }),
-        },
+        spec: dataLoadSpec,
       };
       resources.push(dataLoad);
     }
@@ -143,16 +166,27 @@ const YamlEditor: React.FC<YamlEditorProps> = ({
         throw new Error('Dataset resource not found');
       }
 
+      // 提取完整的annotations，排除description字段
+      const allAnnotations = { ...(dataset.metadata?.annotations || {}) };
+      const description = allAnnotations['data.fluid.io/description'] || '';
+      delete allAnnotations['data.fluid.io/description'];
+
       const formData: DatasetFormData = {
         name: dataset.metadata?.name || '',
         namespace: dataset.metadata?.namespace || 'default',
-        description: dataset.metadata?.annotations?.['data.fluid.io/description'] || '',
+        description,
         labels: dataset.metadata?.labels || {},
+        // 保存完整的annotations（除了description）
+        annotations: Object.keys(allAnnotations).length > 0 ? allAnnotations : undefined,
         runtimeType: runtime?.kind || 'AlluxioRuntime',
         runtimeName: runtime?.metadata?.name || '',
         replicas: runtime?.spec?.replicas || 1,
         tieredStore: runtime?.spec?.tieredstore,
+        // 保存完整的Runtime spec
+        runtimeSpec: runtime?.spec ? { ...runtime.spec } : undefined,
         mounts: dataset.spec?.mounts || [],
+        // 保存完整的Dataset spec
+        datasetSpec: dataset.spec ? { ...dataset.spec } : undefined,
         enableDataLoad: !!dataLoad,
         dataLoadConfig: dataLoad ? {
           loadMetadata: dataLoad.spec?.loadMetadata || true,
@@ -160,6 +194,8 @@ const YamlEditor: React.FC<YamlEditorProps> = ({
           policy: dataLoad.spec?.policy || 'Once',
           schedule: dataLoad.spec?.schedule,
         } : undefined,
+        // 保存完整的DataLoad spec
+        dataLoadSpec: dataLoad?.spec ? { ...dataLoad.spec } : undefined,
       };
 
       return formData;
