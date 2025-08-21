@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Input, Select, Textarea, Row, Col } from '@kubed/components';
 import { StepComponentProps } from '../types';
 import styled from 'styled-components';
-import { Trash } from '@kubed/icons';
+import KVRecordInput, { validateKVPairs } from '../../../../../components/KVRecordInput';
 
 declare const t: (key: string, options?: any) => string;
 
@@ -18,35 +18,10 @@ const StepTitle = styled.h3`
   margin-bottom: 8px;
 `;
 
-const LabelInput = styled.div`
-  display: flex;
-  gap: 8px;
-  margin-bottom: 8px;
-  
-  .label-key, .label-value {
-    flex: 1;
-  }
-`;
-
-const AddLabelButton = styled.button`
-  background: none;
-  border: 1px dashed #d8dee5;
-  color: #3385ff;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-
-  &:hover {
-    border-color: #3385ff;
-    background-color: #f8faff;
-  }
-`;
-
 const ErrorMessage = styled.div`
   color: #ca2621;
-  fontSize: 12px;
-  marginTop: 4px;
+  font-size: 12px;
+  margin-top: 4px;
 `;
 
 const FieldLabel = styled.label`
@@ -55,18 +30,14 @@ const FieldLabel = styled.label`
   font-weight: 600;
 `;
 
-const RemoveButton = styled.button`
-  background: none;
-  border: none;
-  color: #ca2621;
-  cursor: pointer;
-  padding: 8px;
-
-  &:hover {
-    background-color: #ffeaea;
-    border-radius: 4px;
-  }
-`;
+// 键值对验证函数
+const validateLabels = (labels: Array<{ key: string; value: string }>) => {
+  return validateKVPairs(labels, {
+    allowDuplicateKeys: false,
+    allowEmptyKeys: false,
+    allowEmptyValues: true
+  });
+};
 
 const BasicInfoStep: React.FC<StepComponentProps> = ({
   formData,
@@ -86,11 +57,16 @@ const BasicInfoStep: React.FC<StepComponentProps> = ({
   // 构建标签对象的通用函数
   const buildLabelsObject = useCallback((labelArray: Array<{ key: string; value: string }>): Record<string, string> | undefined => {
     const labelsObj: Record<string, string> = {};
+
     labelArray.forEach(({ key, value }) => {
-      if (key && value) {
-        labelsObj[key] = value;
+      const trimmedKey = key?.trim();
+      const trimmedValue = value?.trim();
+      if (trimmedKey && trimmedValue) {
+        // 如果键已存在，保留最后一个值（用户最后输入的）
+        labelsObj[trimmedKey] = trimmedValue;
       }
     });
+
     return Object.keys(labelsObj).length > 0 ? labelsObj : undefined;
   }, []);
 
@@ -234,36 +210,6 @@ const BasicInfoStep: React.FC<StepComponentProps> = ({
     onValidationChange(!!isValid);
   }, [formValues, labels, buildLabelsObject, onDataChange, onValidationChange, validateDatasetName]);
 
-  // 添加标签
-  const addLabel = useCallback(() => {
-    setLabels(prev => [...prev, { key: '', value: '' }]);
-  }, []);
-
-  // 删除标签
-  const removeLabel = useCallback((index: number) => {
-    setLabels(prev => {
-      const newLabels = prev.filter((_, i) => i !== index);
-      onDataChange({
-          labels: buildLabelsObject(newLabels),
-      });
-      return newLabels;
-    });
-  }, [buildLabelsObject, onDataChange]);
-
-  // 更新标签
-  const updateLabel = useCallback((index: number, field: 'key' | 'value', value: string) => {
-    setLabels(prev => {
-      const newLabels = [...prev];
-      newLabels[index][field] = value;   
-        onDataChange({
-          labels: buildLabelsObject(newLabels),
-        });
-      return newLabels;
-    });
-  }, [buildLabelsObject, onDataChange]);
-
-
-
   return (
     <StepContainer>
       <StepTitle>{t('BASIC_INFORMATION')}</StepTitle>
@@ -327,37 +273,27 @@ const BasicInfoStep: React.FC<StepComponentProps> = ({
           />
         </div>
 
-        <div style={{ marginBottom: '16px', display: 'none' }}>
+        <div style={{ marginBottom: '16px' }}>
           <FieldLabel>
             {t('LABELS')}
           </FieldLabel>
-          {labels.map((label, index) => (
-            <LabelInput key={`label-${index}`}>
-              <Input
-                className="label-key"
-                placeholder={t('LABEL_KEY')}
-                value={label.key}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateLabel(index, 'key', e.target.value)}
-              />
-              <Input
-                className="label-value"
-                placeholder={t('LABEL_VALUE')}
-                value={label.value}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateLabel(index, 'value', e.target.value)}
-              />
-              <RemoveButton
-                type="button"
-                onClick={() => removeLabel(index)}
-                title={t('REMOVE_LABEL')}
-                aria-label={`${t('REMOVE_LABEL')} ${index + 1}`}
-              >
-                <Trash size={16} />
-              </RemoveButton>
-            </LabelInput>
-          ))}
-          <AddLabelButton type="button" onClick={addLabel}>
-            + {t('ADD_LABEL')}
-          </AddLabelButton>
+          <KVRecordInput
+            value={labels}
+            onChange={(newLabels: Array<{ key: string; value: string }>) => {
+              setLabels(newLabels);
+              // 只有在没有验证错误时才更新数据
+              const validation = validateLabels(newLabels);
+              if (validation.valid) {
+                onDataChange({
+                  labels: buildLabelsObject(newLabels),
+                });
+              }
+            }}
+            validator={validateLabels}
+            onError={() => {
+              // 错误信息已经在组件内部显示，这里不需要额外处理
+            }}
+          />
         </div>
       </div>
     </StepContainer>
