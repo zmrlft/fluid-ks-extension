@@ -27,7 +27,7 @@ const ModalContent = styled.div`
 `;
 import BasicInfoStep from './components/BasicInfoStep';
 import RuntimeStep from './components/RuntimeStep';
-import DataSourceStep from './components/DataSourceStep';
+import DataSourceStep from './components/DataSourceStep/DataSourceStep';
 import DataLoadStep from './components/DataLoadStep';
 import YamlEditor from './components/YamlEditor';
 import { CreateDatasetModalProps, DatasetFormData, StepConfig } from './types';
