@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { get, debounce } from 'lodash';
-import { Button, Card, Banner, Select, Empty } from '@kubed/components';
+import { Button, Card, Banner, Select, Empty, Checkbox } from '@kubed/components';
 import { DataTable, TableRef, StatusIndicator } from '@ks-console/shared';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DownloadDuotone } from '@kubed/icons';
 import { transformRequestParams } from '../../../utils';
+import { deleteResource, handleBatchResourceDelete } from '../../../utils/deleteResource';
 
 import { getApiPath, getWebSocketUrl, request } from '../../../utils/request';
 
@@ -80,6 +81,10 @@ const DataLoadList: React.FC = () => {
   const [namespaces, setNamespaces] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDataLoads, setSelectedDataLoads] = useState<DataLoad[]>([]);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [currentPageData, setCurrentPageData] = useState<DataLoad[]>([]);
+  const [previousDataLength, setPreviousDataLength] = useState<number>(0);
   const [wsConnected, setWsConnected] = useState<boolean>(false);
   const params: Record<string, any> = useParams();
   const navigate = useNavigate();
@@ -87,6 +92,30 @@ const DataLoadList: React.FC = () => {
 
   // 从URL参数获取集群信息
   const currentCluster = params.cluster || 'host';
+
+  // 当命名空间变化时，清空选择状态和当前页面数据
+  useEffect(() => {
+    setSelectedDataLoads([]);
+    setCurrentPageData([]);
+  }, [namespace]);
+
+  // 监听数据变化，当数据加载任务数量发生变化时清空选择状态
+  const handleDataChange = (newData: DataLoad[]) => {
+    console.log("=== handleDataChange 被调用 ===");
+    console.log("数据变化检测:", {
+      previousLength: previousDataLength,
+      newLength: newData?.length || 0,
+      newData: newData
+    });
+
+    if (newData && previousDataLength > 0 && newData.length !== previousDataLength) {
+      console.log("检测到数据加载任务数量变化，清空选择状态");
+      setSelectedDataLoads([]);
+    }
+
+    setPreviousDataLength(newData?.length || 0);
+    setCurrentPageData(newData || []);
+  };
 
   // 创建防抖的刷新函数，1000ms内最多执行一次
   const debouncedRefresh = debounce(() => {
@@ -142,6 +171,12 @@ const DataLoadList: React.FC = () => {
             // 处理不同类型的事件
             if (['ADDED', 'DELETED', 'MODIFIED'].includes(data.type)) {
               console.log("=== 检测到数据变化，准备防抖刷新 ===");
+
+              // 清空选择状态（特别是删除事件）
+              if (data.type === 'DELETED') {
+                console.log("检测到删除事件，清空选择状态");
+                setSelectedDataLoads([]);
+              }
 
               // 使用防抖函数刷新表格，1000ms内多次调用只会执行最后一次
               debouncedRefresh();
@@ -274,15 +309,90 @@ const DataLoadList: React.FC = () => {
     alert('创建数据加载任务功能待实现');
   };
 
+  // 处理单个数据加载任务选择
+  const handleSelectDataLoad = (dataload: DataLoad, checked: boolean) => {
+    if (checked) {
+      setSelectedDataLoads(prev => [...prev, dataload]);
+    } else {
+      const dataloadUid = get(dataload, 'metadata.uid', '');
+      setSelectedDataLoads(prev => prev.filter(item => get(item, 'metadata.uid', '') !== dataloadUid));
+    }
+  };
+
+  // 处理全选/取消全选
+  const handleSelectAll = (checked: boolean) => {
+    if (!checked) {
+      // 取消全选
+      setSelectedDataLoads([]);
+    } else {
+      // 全选：选择当前页面的所有数据加载任务
+      setSelectedDataLoads([...currentPageData]);
+    }
+  };
+
+
+
+  // 检查全选状态
+  const isAllSelected = currentPageData.length > 0 && selectedDataLoads.length === currentPageData.length;
+  const isIndeterminate = selectedDataLoads.length > 0 && selectedDataLoads.length < currentPageData.length;
+
+  // 批量删除数据加载任务（使用通用删除函数）
+  const handleBatchDelete = async () => {
+    if (selectedDataLoads.length === 0) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const resources = selectedDataLoads.map(dataload => ({
+        name: get(dataload, 'metadata.name', ''),
+        namespace: get(dataload, 'metadata.namespace', '')
+      }));
+
+      await handleBatchResourceDelete(resources, {
+        resourceType: 'dataload',
+        onSuccess: () => {
+          setSelectedDataLoads([]);
+          // 可以在这里添加刷新逻辑
+        }
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // 根据CRD定义完善表格列
   const columns = [
+    {
+      title: (
+        <Checkbox
+          checked={isAllSelected}
+          indeterminate={isIndeterminate}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            handleSelectAll(e.target.checked);
+          }}
+        />
+      ),
+      field: 'selection',
+      width: '50px',
+      render: (_: any, record: DataLoad) => {
+        const dataloadUid = get(record, 'metadata.uid', '');
+        const isSelected = selectedDataLoads.some(item => get(item, 'metadata.uid', '') === dataloadUid);
+        return (
+          <Checkbox
+            checked={isSelected}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSelectDataLoad(record, e.target.checked)}
+          />
+        );
+      },
+    },
     {
       title: t('NAME'),
       field: 'metadata.name',
       width: '15%',
       searchable: true,
       render: (value: any, record: DataLoad) => (
-        <a 
+        <a
           onClick={(e) => {
             e.preventDefault();
             handleNameClick(get(record, 'metadata.name', ''), get(record, 'metadata.namespace', 'default'));
@@ -380,6 +490,7 @@ const DataLoadList: React.FC = () => {
             placeholder={t('SEARCH_BY_NAME')}
             transformRequestParams={transformRequestParams}
             simpleSearch={true}
+            onChangeData={handleDataChange}
             toolbarLeft={
               <ToolbarWrapper>
                 <Select
@@ -399,9 +510,21 @@ const DataLoadList: React.FC = () => {
               </ToolbarWrapper>
             }
             toolbarRight={
-              <Button onClick={handleCreateDataLoad} style={{ marginLeft: '16px' }}>
-                {t('CREATE_DATALOAD')}
-              </Button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {selectedDataLoads.length > 0 && (
+                  <Button
+                    color="error"
+                    onClick={handleBatchDelete}
+                    loading={isDeleting}
+                    style={{ marginRight: '8px' }}
+                  >
+                    {t('DELETE')} ({selectedDataLoads.length})
+                  </Button>
+                )}
+                <Button onClick={handleCreateDataLoad}>
+                  {t('CREATE_DATALOAD')}
+                </Button>
+              </div>
             }
           />
         )}
