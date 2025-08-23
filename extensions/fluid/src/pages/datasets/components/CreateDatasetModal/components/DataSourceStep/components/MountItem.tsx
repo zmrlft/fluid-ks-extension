@@ -2,7 +2,8 @@ import React from 'react';
 import { Input, Switch, Row, Col } from '@kubed/components';
 import { Trash } from '@kubed/icons';
 import KVRecordInput, { validateKVPairs } from '../../../../../../../components/KVRecordInput';
-import { MountItemProps } from '../types';
+import EncryptOptionsInput, { validateEncryptOptions } from './EncryptOptionsInput';
+import { MountItemProps, EncryptOption } from '../types';
 import {
   MountItem as StyledMountItem,
   RemoveButton,
@@ -126,6 +127,22 @@ export const MountItem: React.FC<MountItemProps> = ({
             keyPlaceholder={t('OPTION_KEY')}
             valuePlaceholder={t('OPTION_VALUE')}
             addButtonText={t('ADD_OPTION')}
+          />
+        </div>
+
+        <div style={{ marginBottom: '16px' }}>
+          <FormLabel>
+            {t('ENCRYPT_OPTIONS')}
+            <OptionalLabel>
+              (可选，用于配置敏感信息如访问密钥)
+            </OptionalLabel>
+          </FormLabel>
+          <EncryptOptionsInput
+            value={mount.encryptOptions || []}
+            onChange={(newEncryptOptions: EncryptOption[]) => {
+              onUpdate(index, 'encryptOptions', newEncryptOptions);
+            }}
+            validator={validateEncryptOptions}
           />
         </div>
       </OptionsContainer>
