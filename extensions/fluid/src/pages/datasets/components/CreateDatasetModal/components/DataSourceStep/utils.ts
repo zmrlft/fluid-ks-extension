@@ -32,6 +32,19 @@ export const convertMountsForSubmission = (mounts: Mount[]) => {
     readOnly: mount.readOnly,
     shared: mount.shared,
     options: convertOptionsToObject(mount.options),
+    encryptOptions: mount.encryptOptions?.filter(option =>
+      option.name.trim() &&
+      option.valueFrom?.secretKeyRef.name.trim() &&
+      option.valueFrom?.secretKeyRef.key.trim()
+    ).map(option => ({
+      name: option.name.trim(),
+      valueFrom: {
+        secretKeyRef: {
+          name: option.valueFrom!.secretKeyRef.name.trim(),
+          key: option.valueFrom!.secretKeyRef.key.trim()
+        }
+      }
+    })),
   }));
 };
 
@@ -47,6 +60,7 @@ export const initializeMountsFromFormData = (formMounts?: any[]): Mount[] => {
       readOnly: false,
       shared: true,
       options: [],
+      encryptOptions: [],
     }];
   }
 
@@ -57,6 +71,7 @@ export const initializeMountsFromFormData = (formMounts?: any[]): Mount[] => {
     readOnly: mount.readOnly || false,
     shared: mount.shared !== undefined ? mount.shared : true,
     options: convertOptionsToArray(mount.options),
+    encryptOptions: mount.encryptOptions || [],
   }));
 };
 

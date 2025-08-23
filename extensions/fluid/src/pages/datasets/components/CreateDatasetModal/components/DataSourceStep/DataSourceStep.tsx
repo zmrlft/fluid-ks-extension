@@ -44,6 +44,7 @@ const DataSourceStep: React.FC<StepComponentProps> = ({
       readOnly: false,
       shared: true,
       options: [],
+      encryptOptions: [],
       name: generateMountName(mounts),
     };
     const newMounts = [...mounts, newMount];
