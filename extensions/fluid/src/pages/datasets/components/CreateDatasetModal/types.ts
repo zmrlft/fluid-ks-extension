@@ -13,6 +13,29 @@ export interface DatasetFormData {
   //   annotations?: Record<string, string>; // 支持用户自定义的任意annotations
   //   labels?: Record<string, string>;
 
+  // 数据集里的数据源配置
+  mounts?: Array<{
+    mountPoint: string;
+    name: string;
+    path?: string; // 挂载路径，如果不设置将是 /{Name}
+    readOnly?: boolean;
+    shared?: boolean;
+    options?: Record<string, string>;
+    encryptOptions?: Array<{
+      name: string;
+      valueFrom: {
+        secretKeyRef: {
+          name: string;
+          key: string;
+        };
+      };
+    }>;
+  }>;
+  // 这里对应dataset的crd字段mounts,fluid的api文档中提到This field can be empty because some runtimes don’t need to mount external storage (e.g. Vineyard).
+  // mounts:
+  // - mountPoint: local:///data-for-fluid
+  //   name: my-local-data
+
   // 运行时配置
   runtimeType: RuntimeType;
   runtimeName: string; // 自动设置为数据集名称（fluid官网里的视频提到dataset和runtime名称要一样）
@@ -55,29 +78,6 @@ export interface DatasetFormData {
   // path表示文件路径，用于定义该层级存储的路径,支持多个路径，多个路径用逗号分隔，如 “/mnt/cache1,/mnt/cache2”
   // 指定该存储层级使用的卷类型，可选值为 hostPath、emptyDir 和 volumeTemplate。若未明确设置，默认值为 hostPath
   
-  // 数据源配置
-  mounts?: Array<{
-    mountPoint: string;
-    name: string;
-    path?: string; // 挂载路径，如果不设置将是 /{Name}
-    readOnly?: boolean;
-    shared?: boolean;
-    options?: Record<string, string>;
-    encryptOptions?: Array<{
-      name: string;
-      valueFrom: {
-        secretKeyRef: {
-          name: string;
-          key: string;
-        };
-      };
-    }>;
-  }>;
-  // 这里对应dataset的crd字段mounts,fluid的api文档中提到This field can be empty because some runtimes don’t need to mount external storage (e.g. Vineyard).
-  // mounts:
-  // - mountPoint: local:///data-for-fluid
-  //   name: my-local-data
-  
   // 数据预热配置
   enableDataLoad: boolean;
   dataLoadConfig?: {
@@ -106,7 +106,12 @@ export interface DatasetFormData {
   //   schedule?: string;
   //   ... 以及其他高级字段
   // 由于是和dataset绑定，所以spec.dataset字段无需用户填写
+
+  // 独立创建DataLoad时的额外字段
+  dataLoadName?: string; // DataLoad的名称
+  selectedDataset?: string; // 选择的数据集名称
   
+  // 其他字段
   // Dataset高级设置 - 这些字段在API文档中定义但UI暂未支持，可通过YAML编辑
   // 以下字段将通过完整的Dataset spec支持，用户可在YAML模式下编辑：
   // owner?: User;                    // 数据集所有者
@@ -141,6 +146,7 @@ export interface StepComponentProps {
   formData: DatasetFormData;
   onDataChange: (data: Partial<DatasetFormData>) => void;
   onValidationChange: (isValid: boolean) => void;
+  isIndependent?: boolean
 }
 
 export interface StepConfig {
