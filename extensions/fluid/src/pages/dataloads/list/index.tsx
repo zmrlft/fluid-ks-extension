@@ -9,6 +9,7 @@ import { transformRequestParams } from '../../../utils';
 import { deleteResource, handleBatchResourceDelete } from '../../../utils/deleteResource';
 
 import { getApiPath, getWebSocketUrl, request } from '../../../utils/request';
+import CreateDataloadModal from '../components/CreateDataloadModal';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -81,6 +82,7 @@ const DataLoadList: React.FC = () => {
   const [namespaces, setNamespaces] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [createModalVisible, setCreateModalVisible] = useState<boolean>(false);
   const [selectedDataLoads, setSelectedDataLoads] = useState<DataLoad[]>([]);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [currentPageData, setCurrentPageData] = useState<DataLoad[]>([]);
@@ -305,8 +307,7 @@ const DataLoadList: React.FC = () => {
   
   // 创建数据加载任务按钮点击处理
   const handleCreateDataLoad = () => {
-    // 暂时实现为提示信息
-    alert('创建数据加载任务功能待实现');
+    setCreateModalVisible(true);
   };
 
   // 处理单个数据加载任务选择
@@ -529,6 +530,20 @@ const DataLoadList: React.FC = () => {
           />
         )}
       </StyledCard>
+
+      <CreateDataloadModal
+        visible={createModalVisible}
+        onCancel={() => setCreateModalVisible(false)}
+        onSuccess={() => {
+          setCreateModalVisible(false);
+          // 刷新表格数据
+          if (tableRef.current) {
+            debouncedRefresh();
+          }
+        }}
+      />
+
+
     </div>
   );
 };

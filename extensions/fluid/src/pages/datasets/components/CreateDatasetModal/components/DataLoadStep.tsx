@@ -3,6 +3,7 @@ import { Form, FormItem, Input, Select, Switch, InputNumber, Row, Col, Button, A
 import { StepComponentProps } from '../types';
 import styled from 'styled-components';
 import { Add, Trash } from '@kubed/icons';
+import { request } from '../../../../../utils/request';
 
 declare const t: (key: string, options?: any) => string;
 
@@ -90,32 +91,98 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
   formData,
   onDataChange,
   onValidationChange,
+  isIndependent = false
 }) => {
   const [targets, setTargets] = useState<Target[]>([
     { path: '/', replicas: 1 },
   ]);
   const [formValues, setFormValues] = useState({
-    enableDataLoad: false,
-    loadMetadata: false,
-    policy: 'Once',
-    schedule: '',
+    enableDataLoad: formData.enableDataLoad || false,
+    loadMetadata: formData.dataLoadConfig?.loadMetadata || false,
+    policy: formData.dataLoadConfig?.policy || 'Once',
+    schedule: formData.dataLoadConfig?.schedule || '',
+    target: formData.dataLoadConfig?.target || [{ path: '/', replicas: 1 }],
   });
+  const [namespaces, setNamespaces] = useState<string[]>([]);
+  const [datasets, setDatasets] = useState<any[]>([]);
+  const [isLoadingNamespaces, setIsLoadingNamespaces] = useState(false);
+  const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
+
+  // 获取命名空间列表
+  useEffect(() => {
+    if (isIndependent) {
+      const fetchNamespaces = async () => {
+        try {
+          setIsLoadingNamespaces(true);
+          const response = await request('/api/v1/namespaces');
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data && data.items) {
+              const namespaceList = data.items.map((item: any) => item.metadata.name);
+              setNamespaces(namespaceList);
+            }
+          }
+        } catch (error) {
+          console.error('获取命名空间列表失败:', error);
+        } finally {
+          setIsLoadingNamespaces(false);
+        }
+      };
+      fetchNamespaces();
+    }
+  }, [isIndependent]);
+
+  // 获取数据集列表
+  useEffect(() => {
+    if (isIndependent && formData.namespace) {
+      const fetchDatasets = async () => {
+        try {
+          setIsLoadingDatasets(true);
+          const url = `/kapis/data.fluid.io/v1alpha1/namespaces/${formData.namespace}/datasets`;
+          const response = await request(url);
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data && data.items) {
+              setDatasets(data.items);
+            }
+          }
+        } catch (error) {
+          console.error('获取数据集列表失败:', error);
+        } finally {
+          setIsLoadingDatasets(false);
+        }
+      };
+      fetchDatasets();
+    }
+  }, [isIndependent, formData.namespace]);
 
   // 初始化表单数据
   useEffect(() => {
     const dataLoadConfig = formData.dataLoadConfig;
 
     setFormValues({
-      enableDataLoad: formData.enableDataLoad || false,
+      enableDataLoad: isIndependent ? true : (formData.enableDataLoad || false), // 独立模式默认启用
       loadMetadata: dataLoadConfig?.loadMetadata || false,
       policy: dataLoadConfig?.policy || 'Once',
       schedule: dataLoadConfig?.schedule || '',
+      target: dataLoadConfig?.target || [{ path: '/', replicas: 1 }],
     });
 
     if (dataLoadConfig?.target && dataLoadConfig.target.length > 0) {
       setTargets(dataLoadConfig.target.map(t => ({ ...t, replicas: t.replicas || 1 })));
     }
-  }, [formData]);
+  }, [formData, isIndependent]);
+
+  // TODO
+  // 独立模式下监听表单数据变化并触发验证
+  // useEffect(() => {
+  //   if (isIndependent) {
+  //     // updateFormData();
+  //     这里有bug，先注释掉后面再来排查
+  //   }
+  // }, [formData.dataLoadName, formData.namespace, formData.selectedDataset, isIndependent]);
 
   // 更新表单数据
   const updateFormData = (newTargets?: Target[], newFormValues?: any) => {
@@ -134,12 +201,24 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
       // 保留现有的dataLoadSpec配置
     });
 
-    // 如果启用了数据预热，验证至少有一个有效的目标路径
-    if (valuesToUse.enableDataLoad) {
+    // 验证逻辑
+    if (isIndependent) {
+      // 独立模式：验证必填字段
+      const hasDataLoadName = !!(formData.dataLoadName && formData.dataLoadName.trim() !== '');
+      const hasNamespace = !!(formData.namespace && formData.namespace.trim() !== '');
+      const hasSelectedDataset = !!(formData.selectedDataset && formData.selectedDataset.trim() !== '');
       const hasValidTarget = targetsToUse.some(target => target.path);
-      onValidationChange(hasValidTarget);
+
+      const isValid = hasDataLoadName && hasNamespace && hasSelectedDataset && hasValidTarget;
+      onValidationChange(isValid);
     } else {
-      onValidationChange(true); // 如果未启用数据预热，则总是有效
+      // 非独立模式：如果启用了数据预热，验证至少有一个有效的目标路径
+      if (valuesToUse.enableDataLoad) {
+        const hasValidTarget = targetsToUse.some(target => target.path);
+        onValidationChange(hasValidTarget);
+      } else {
+        onValidationChange(true); // 如果未启用数据预热，则总是有效
+      }
     }
   };
 
@@ -183,22 +262,97 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
 
   return (
     <StepContainer>
-      <Alert
-        type="info"
-        title={t('DATA_PRELOAD_OPTIONAL')}
-        style={{ marginBottom: 24 }}
-      >
-        {t('DATA_PRELOAD_OPTIONAL_DESC')}
-      </Alert>
-      <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
-          {t('ENABLE_DATA_PRELOAD')}
-        </label>
-        <Switch
-          checked={formValues.enableDataLoad}
-          onChange={(checked) => handleFormChange('enableDataLoad', checked)}
-        />
-      </div>
+      {!isIndependent ? (
+        <Alert
+          type="info"
+          title={t('DATA_PRELOAD_OPTIONAL')}
+          style={{ marginBottom: 24 }}
+        >
+          {t('DATA_PRELOAD_OPTIONAL_DESC')}
+        </Alert>
+      ) : (
+        <div style={{ marginBottom: 24 }}>
+          {/* <Alert
+            type="info"
+            title={t('CREATE_DATALOAD_INFO')}
+            style={{ marginBottom: 16 }}
+          >
+            {t('CREATE_DATALOAD_INFO_DESC')}
+          </Alert> */}
+
+          {/* DataLoad名称输入框 */}
+          <Row gutter={[16, 0]} style={{ marginBottom: 16 }}>
+            <Col span={6}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+                  {t('DATALOAD_NAME')} *
+                </label>
+                <Input
+                  placeholder={t('DATALOAD_NAME_PLACEHOLDER')}
+                  value={formData.dataLoadName || ''}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    onDataChange({ dataLoadName: e.target.value })
+                  }
+                />
+              </div>
+            </Col>
+            <Col span={6}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+                  {t('NAMESPACE')} *
+                </label>
+                <Select
+                  placeholder={t('SELECT_NAMESPACE')}
+                  value={formData.namespace}
+                  onChange={(value) => onDataChange({ namespace: value })}
+                  loading={isLoadingNamespaces}
+                  style={{ width: '100%' }}
+                >
+                  {namespaces.map(ns => (
+                    <Select.Option key={ns} value={ns}>
+                      {ns}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </div>
+            </Col>
+          </Row>
+
+          {/* 数据集选择器 */}
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+              {t('SELECT_DATASET')} *
+            </label>
+            <Select
+              placeholder={t('SELECT_DATASET_PLACEHOLDER')}
+              value={formData.selectedDataset || ''}
+              onChange={(value) => onDataChange({ selectedDataset: value })}
+              loading={isLoadingDatasets}
+              disabled={!formData.namespace}
+              style={{ width: '100%' }}
+              inputMode='text'
+            >
+              {datasets.map(dataset => (
+                <Select.Option key={dataset.metadata.name} value={dataset.metadata.name}>
+                  {dataset.metadata.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+        </div>
+      )}
+
+      {!isIndependent && (
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+            {t('ENABLE_DATA_PRELOAD')}
+          </label>
+          <Switch
+            checked={formValues.enableDataLoad}
+            onChange={(checked) => handleFormChange('enableDataLoad', checked)}
+          />
+        </div>
+      )}
 
       <div>
         <ConfigSection disabled={!enableDataLoad}>
