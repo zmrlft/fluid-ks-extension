@@ -62,12 +62,13 @@ const DataLoadYamlEditor: React.FC<DataLoadYamlEditorProps> = ({
     const dataLoadSpec = {
       dataset: {
         name: data.selectedDataset || data.name || '',
-        namespace: data.namespace || 'default',
+        namespace: data.selectedDatasetNamespace || data.namespace || 'default',
       },
       loadMetadata: data.dataLoadConfig?.loadMetadata,
       target: data.dataLoadConfig?.target || [],
       policy: data.dataLoadConfig?.policy || 'Once',
       ...(data.dataLoadConfig?.schedule && { schedule: data.dataLoadConfig.schedule }),
+      ...(data.dataLoadConfig?.ttlSecondsAfterFinished !== undefined && { ttlSecondsAfterFinished: data.dataLoadConfig?.ttlSecondsAfterFinished }),
     };
 
     const dataLoad: any = {
@@ -75,7 +76,7 @@ const DataLoadYamlEditor: React.FC<DataLoadYamlEditorProps> = ({
       kind: 'DataLoad',
       metadata: {
         name: data.dataLoadName || `${data.selectedDataset || data.name}-dataload`,
-        namespace: data.namespace || 'default',
+        namespace: data.dataLoadNamespace || data.namespace || 'default',
         labels: {},
       },
       spec: dataLoadSpec,
@@ -104,13 +105,16 @@ const DataLoadYamlEditor: React.FC<DataLoadYamlEditorProps> = ({
         runtimeName: '',
         replicas: 1,
         dataLoadName: resource.metadata?.name || '',
+        dataLoadNamespace: resource.metadata?.namespace || 'default',
         selectedDataset: resource.spec?.dataset?.name || '',
+        selectedDatasetNamespace: resource.spec?.dataset?.namespace || 'default',
         enableDataLoad: true,
         dataLoadConfig: {
           loadMetadata: resource.spec?.loadMetadata || false,
           target: resource.spec?.target || [],
           policy: resource.spec?.policy || 'Once',
           schedule: resource.spec?.schedule,
+          ttlSecondsAfterFinished: resource.spec?.ttlSecondsAfterFinished,
         },
         dataLoadSpec: resource.spec ? { ...resource.spec } : undefined,
       };

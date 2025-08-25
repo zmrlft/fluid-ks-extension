@@ -64,12 +64,15 @@ const CreateDataloadModal: React.FC<CreateDatasetModalProps> = ({
         replicas: 1,
         enableDataLoad: true, // 独立创建DataLoad时默认启用
         dataLoadName: '',
+        dataLoadNamespace: 'default',
         selectedDataset: '',
+        selectedDatasetNamespace: 'default',
         dataLoadConfig: {
             loadMetadata: false,
             target: [ {path: "/", replicas: 1}],
             policy: 'Once',
             schedule: '',
+            ttlSecondsAfterFinished: undefined,
         }
     });
 
@@ -128,12 +131,13 @@ const CreateDataloadModal: React.FC<CreateDatasetModalProps> = ({
         const dataLoadSpec = {
             dataset: {
                 name: data.selectedDataset || data.name,
-                namespace: data.namespace,
+                namespace: data.selectedDatasetNamespace || data.namespace,
             },
             loadMetadata: data.dataLoadConfig.loadMetadata,
             target: data.dataLoadConfig.target || [],
             policy: data.dataLoadConfig.policy || 'Once',
             ...(data.dataLoadConfig.schedule && { schedule: data.dataLoadConfig.schedule }),
+            ...(data.dataLoadConfig?.ttlSecondsAfterFinished !== undefined && { ttlSecondsAfterFinished: data.dataLoadConfig?.ttlSecondsAfterFinished }),
         };
 
         const dataLoad = {
@@ -141,7 +145,7 @@ const CreateDataloadModal: React.FC<CreateDatasetModalProps> = ({
             kind: 'DataLoad',
             metadata: {
                 name: data.dataLoadName || `${data.selectedDataset || data.name}-dataload`,
-                namespace: data.namespace,
+                namespace: data.dataLoadNamespace || data.namespace,
             },
             spec: dataLoadSpec,
         };
