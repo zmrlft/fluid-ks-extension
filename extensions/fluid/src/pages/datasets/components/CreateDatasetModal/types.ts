@@ -88,6 +88,7 @@ export interface DatasetFormData {
     }>;
     policy?: 'Once' | 'Cron' | 'OnEvent';
     schedule?: string;
+    ttlSecondsAfterFinished?: number; // TTL seconds after finished
   };
   // 新增：完整的DataLoad spec支持，保存用户在YAML中编辑的所有字段
   dataLoadSpec?: Record<string, any>;
@@ -109,7 +110,9 @@ export interface DatasetFormData {
 
   // 独立创建DataLoad时的额外字段
   dataLoadName?: string; // DataLoad的名称
+  dataLoadNamespace?: string; // DataLoad所在的命名空间
   selectedDataset?: string; // 选择的数据集名称
+  selectedDatasetNamespace?: string; // 选择的数据集所在的命名空间
   
   // 其他字段
   // Dataset高级设置 - 这些字段在API文档中定义但UI暂未支持，可通过YAML编辑

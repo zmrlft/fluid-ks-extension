@@ -102,13 +102,16 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
     policy: formData.dataLoadConfig?.policy || 'Once',
     schedule: formData.dataLoadConfig?.schedule || '',
     target: formData.dataLoadConfig?.target || [{ path: '/', replicas: 1 }],
+    ttlSecondsAfterFinished: formData.dataLoadConfig?.ttlSecondsAfterFinished,
   });
   const [namespaces, setNamespaces] = useState<string[]>([]);
+  // const [datasetNamespaces, setDatasetNamespaces] = useState<string[]>([]);
   const [datasets, setDatasets] = useState<any[]>([]);
   const [isLoadingNamespaces, setIsLoadingNamespaces] = useState(false);
+  // const [isLoadingDatasetNamespaces, setIsLoadingDatasetNamespaces] = useState(false);
   const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
 
-  // 获取命名空间列表
+  // 获取命名空间列表（用于DataLoad）
   useEffect(() => {
     if (isIndependent) {
       const fetchNamespaces = async () => {
@@ -121,12 +124,15 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
             if (data && data.items) {
               const namespaceList = data.items.map((item: any) => item.metadata.name);
               setNamespaces(namespaceList);
+              // 同时设置数据集命名空间列表（通常是相同的）
+              // setDatasetNamespaces(namespaceList);
             }
           }
         } catch (error) {
           console.error('获取命名空间列表失败:', error);
         } finally {
           setIsLoadingNamespaces(false);
+          // setIsLoadingDatasetNamespaces(false);
         }
       };
       fetchNamespaces();
@@ -135,11 +141,11 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
 
   // 获取数据集列表
   useEffect(() => {
-    if (isIndependent && formData.namespace) {
+    if (isIndependent && formData.selectedDatasetNamespace) {
       const fetchDatasets = async () => {
         try {
           setIsLoadingDatasets(true);
-          const url = `/kapis/data.fluid.io/v1alpha1/namespaces/${formData.namespace}/datasets`;
+          const url = `/kapis/data.fluid.io/v1alpha1/namespaces/${formData.selectedDatasetNamespace}/datasets`;
           const response = await request(url);
 
           if (response.ok) {
@@ -156,7 +162,7 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
       };
       fetchDatasets();
     }
-  }, [isIndependent, formData.namespace]);
+  }, [isIndependent, formData.selectedDatasetNamespace]);
 
   // 初始化表单数据
   useEffect(() => {
@@ -168,6 +174,7 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
       policy: dataLoadConfig?.policy || 'Once',
       schedule: dataLoadConfig?.schedule || '',
       target: dataLoadConfig?.target || [{ path: '/', replicas: 1 }],
+      ttlSecondsAfterFinished: formData.dataLoadConfig?.ttlSecondsAfterFinished,
     });
 
     if (dataLoadConfig?.target && dataLoadConfig.target.length > 0) {
@@ -197,6 +204,7 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
         target: targetsToUse,
         policy: valuesToUse.policy,
         schedule: valuesToUse.policy === 'Cron' ? valuesToUse.schedule : undefined,
+        ttlSecondsAfterFinished: valuesToUse.ttlSecondsAfterFinished,
       } : undefined,
       // 保留现有的dataLoadSpec配置
     });
@@ -227,6 +235,13 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
     const newValues = { ...formValues, [field]: value };
     setFormValues(newValues);
     updateFormData(undefined, newValues);
+
+    // // 如果是TTL字段，直接更新到formData
+    // if (field === 'ttlSecondsAfterFinished') {
+    //   onDataChange({ ttlSecondsAfterFinished: value });
+    // } else {
+    //   updateFormData(undefined, newValues);
+    // }
   };
 
   // 更新目标路径
@@ -280,7 +295,7 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
             {t('CREATE_DATALOAD_INFO_DESC')}
           </Alert> */}
 
-          {/* DataLoad名称输入框 */}
+          {/* DataLoad基本信息 */}
           <Row gutter={[16, 0]} style={{ marginBottom: 16 }}>
             <Col span={6}>
               <div style={{ marginBottom: '16px' }}>
@@ -299,13 +314,17 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
             <Col span={6}>
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
-                  {t('NAMESPACE')} *
+                  {t('DATALOAD_NAMESPACE')} *
                 </label>
                 <Select
-                  placeholder={t('SELECT_NAMESPACE')}
-                  value={formData.namespace}
-                  onChange={(value) => onDataChange({ namespace: value })}
+                  placeholder={t('SELECT_DATALOAD_NAMESPACE')}
+                  value={formData.dataLoadNamespace || 'default'}
+                  onChange={(value) => onDataChange({ dataLoadNamespace: value })}
                   loading={isLoadingNamespaces}
+                  showSearch
+                  filterOption={(input, option) =>
+                    String(option?.children || '').toLowerCase().includes(input.toLowerCase())
+                  }
                   style={{ width: '100%' }}
                 >
                   {namespaces.map(ns => (
@@ -318,27 +337,58 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
             </Col>
           </Row>
 
-          {/* 数据集选择器 */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
-              {t('SELECT_DATASET')} *
-            </label>
-            <Select
-              placeholder={t('SELECT_DATASET_PLACEHOLDER')}
-              value={formData.selectedDataset || ''}
-              onChange={(value) => onDataChange({ selectedDataset: value })}
-              loading={isLoadingDatasets}
-              disabled={!formData.namespace}
-              style={{ width: '100%' }}
-              inputMode='text'
-            >
-              {datasets.map(dataset => (
-                <Select.Option key={dataset.metadata.name} value={dataset.metadata.name}>
-                  {dataset.metadata.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </div>
+          {/* 数据集选择 */}
+          <Row gutter={[16, 0]} style={{ marginBottom: 16 }}>
+            <Col span={6}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+                  {t('DATASET_NAMESPACE')} *
+                </label>
+                <Select
+                  placeholder={t('SELECT_DATASET_NAMESPACE')}
+                  value={formData.selectedDatasetNamespace}
+                  onChange={(value) => onDataChange({ selectedDatasetNamespace: value, selectedDataset: '' })}
+                  loading={isLoadingNamespaces}
+                  showSearch
+                  filterOption={(input, option) =>
+                    String(option?.children || '').toLowerCase().includes(input.toLowerCase())
+                  }
+                  style={{ width: '100%' }}
+                >
+                  {namespaces.map(ns => (
+                    <Select.Option key={ns} value={ns}>
+                      {ns}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </div>
+            </Col>
+            <Col span={6}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+                  {t('SELECT_DATASET')} *
+                </label>
+                <Select
+                  placeholder={t('SELECT_DATASET_PLACEHOLDER')}
+                  value={formData.selectedDataset || ''}
+                  onChange={(value) => onDataChange({ selectedDataset: value })}
+                  loading={isLoadingDatasets}
+                  disabled={!formData.selectedDatasetNamespace}
+                  showSearch
+                  filterOption={(input, option) =>
+                    String(option?.children || '').toLowerCase().includes(input.toLowerCase())
+                  }
+                  style={{ width: '100%' }}
+                >
+                  {datasets.map(dataset => (
+                    <Select.Option key={dataset.metadata.name} value={dataset.metadata.name}>
+                      {dataset.metadata.name}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </div>
+            </Col>
+          </Row>
         </div>
       )}
 
@@ -384,6 +434,20 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
                     </Select.Option>
                   ))}
                 </Select>
+              </div>
+            </Col>
+            <Col span={3}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+                  {t('TTL_SECONDS_AFTER_FINISHED')}
+                </label>
+                <InputNumber
+                  placeholder={t('TTL_SECONDS_PLACEHOLDER')}
+                  value={formValues.ttlSecondsAfterFinished}
+                  onChange={(value) => handleFormChange('ttlSecondsAfterFinished', value)}
+                  min={0}
+                  style={{ width: '100%' }}
+                />
               </div>
             </Col>
           </Row>

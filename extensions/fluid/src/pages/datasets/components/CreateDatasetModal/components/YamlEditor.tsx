@@ -134,6 +134,7 @@ const YamlEditor: React.FC<YamlEditorProps> = ({
         target: data.dataLoadConfig.target || [],
         policy: data.dataLoadConfig.policy || 'Once',
         ...(data.dataLoadConfig.schedule && { schedule: data.dataLoadConfig.schedule }),
+        ...(data.dataLoadConfig.ttlSecondsAfterFinished && { ttlSecondsAfterFinished: data.dataLoadConfig.ttlSecondsAfterFinished}),
       };
 
       const dataLoad: any = {
@@ -193,6 +194,7 @@ const YamlEditor: React.FC<YamlEditorProps> = ({
           target: dataLoad.spec?.target || [],
           policy: dataLoad.spec?.policy || 'Once',
           schedule: dataLoad.spec?.schedule,
+          ttlSecondsAfterFinished: dataLoad.spec?.ttlSecondsAfterFinished,
         } : undefined,
         // 保存完整的DataLoad spec
         dataLoadSpec: dataLoad?.spec ? { ...dataLoad.spec } : undefined,
