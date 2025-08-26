@@ -29,13 +29,24 @@ const getRuntimePhase = (item: any) => {
       get(item, 'status.fusePhase', 'Unknown')));
 };
 
+// DataLoad状态判断
+const getDataLoadPhase = (item: any) => {
+  const deletionTime = get(item, 'metadata.deletionTimestamp');
+  if (deletionTime) {
+    return 'Terminating';
+  }
+  return get(item, 'status.phase', 'Unknown');
+};
+
 // 获取资源状态的通用函数
-const getResourcePhase = (item: any, resourceType: 'dataset' | 'runtime') => {
+const getResourcePhase = (item: any, resourceType: 'dataset' | 'runtime' | 'dataload') => {
   switch (resourceType) {
     case 'dataset':
       return getDatasetPhase(item);
     case 'runtime':
       return getRuntimePhase(item);
+    case 'dataload':
+      return getDataLoadPhase(item);
     default:
       return get(item, 'status.phase', 'Unknown');
   }
@@ -47,7 +58,7 @@ interface FluidEventsProps {
   /** 模块名称，用于传递给Events组件 */
   module: string;
   /** 资源类型，用于状态判断 */
-  resourceType: 'dataset' | 'runtime';
+  resourceType: 'dataset' | 'runtime' | 'dataload';
   /** 加载状态文本 */
   loadingText?: string;
 }
@@ -86,7 +97,9 @@ const FluidEvents: React.FC<FluidEventsProps> = ({
 
     // 其他辅助字段
     creationTime: get(rawDetail, 'metadata.creationTimestamp'),
-    kind: get(rawDetail, 'kind', resourceType === 'dataset' ? 'Dataset' : 'Runtime'),
+    kind: get(rawDetail, 'kind',
+      resourceType === 'dataset' ? 'Dataset' :
+      resourceType === 'runtime' ? 'Runtime' : 'DataLoad'),
     apiVersion: get(rawDetail, 'apiVersion', 'data.fluid.io/v1alpha1'),
 
     // 保持原有的metadata结构以防某些组件依赖

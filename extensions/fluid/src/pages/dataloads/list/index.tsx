@@ -8,7 +8,7 @@ import { DownloadDuotone } from '@kubed/icons';
 import { transformRequestParams } from '../../../utils';
 import { deleteResource, handleBatchResourceDelete } from '../../../utils/deleteResource';
 
-import { getApiPath, getWebSocketUrl, request } from '../../../utils/request';
+import { getApiPath, getWebSocketUrl, request, getCurrentClusterFromUrl } from '../../../utils/request';
 import CreateDataloadModal from '../components/CreateDataloadModal';
 
 // 全局t函数声明
@@ -299,10 +299,11 @@ const DataLoadList: React.FC = () => {
     setNamespace(value);
   };
 
-  // 点击名称跳转到详情页的函数（预留功能，实际暂不实现）
+  // 点击名称跳转到详情页的函数
   const handleNameClick = (name: string, ns: string) => {
-    // 预留详情页跳转功能
-    alert(`暂未实现详情页：/fluid/dataloads/${ns}/${name}`);
+    const currentCluster = getCurrentClusterFromUrl();
+    const url = `/fluid/${currentCluster}/${ns}/dataloads/${name}/resource-status`;
+    navigate(url);
   };
   
   // 创建数据加载任务按钮点击处理

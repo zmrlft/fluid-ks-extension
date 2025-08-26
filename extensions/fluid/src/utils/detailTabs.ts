@@ -16,14 +16,14 @@ export interface TabConfig {
  * @param cluster 集群名称
  * @param namespace 命名空间
  * @param name 资源名称
- * @param module 模块名称 ('datasets' | 'runtimes')
+ * @param module 模块名称 ('datasets' | 'runtimes' | 'dataloads')
  * @returns 标签页配置数组
  */
 export function createDetailTabs(
   cluster: string,
   namespace: string,
   name: string,
-  module: 'datasets' | 'runtimes'
+  module: 'datasets' | 'runtimes' | 'dataloads'
 ): TabConfig[] {
   const clusterName = cluster || 'host';
   const path = `/fluid/${clusterName}/${namespace}/${module}/${name}`;
