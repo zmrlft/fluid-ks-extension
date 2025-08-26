@@ -13,6 +13,7 @@ import { RocketDuotone } from '@kubed/icons';
 import { request } from '../../../utils/request';
 import { EditYamlModal } from '@ks-console/shared';
 import { runtimeTypeList, RuntimeTypeMeta } from '../runtimeMap';
+import { createDetailTabs } from '../../../utils/detailTabs';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -124,22 +125,7 @@ const RuntimeDetail: React.FC = () => {
 
   // 定义标签页
   const tabs = useMemo(() => {
-    const clusterName = cluster || 'host';
-    const path = `/fluid/${clusterName}/${namespace}/runtimes/${name}`;
-    return [
-      {
-        title: t('RESOURCE_STATUS'),
-        path: `${path}/resource-status`,
-      },
-      {
-        title: t('METADATA'),
-        path: `${path}/metadata`,
-      },
-      {
-        title: t('EVENTS'),
-        path: `${path}/events`,
-      },
-    ];
+    return createDetailTabs(cluster || 'host', namespace!, name!, 'runtimes');
   }, [cluster, namespace, name]);
 
   // 定义操作按钮（不包含删除按钮）
