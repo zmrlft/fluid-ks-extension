@@ -7,104 +7,25 @@ import { useCacheStore as useStore, StatusIndicator } from '@ks-console/shared';
 import { Card } from '@kubed/components';
 import { DatabaseSealDuotone, StorageDuotone, AppstoreDuotone } from '@kubed/icons';
 import { get } from 'lodash';
-import styled from 'styled-components';
 import { getCurrentClusterFromUrl } from '../../../../utils/request';
+import {
+  CardWrapper,
+  InfoGrid,
+  InfoItem,
+  InfoLabel,
+  InfoValue,
+  StatusCard,
+  StatusHeader,
+  StatusIcon,
+  StatusTitle,
+  StatusGrid,
+  StatusItem,
+  StatusValue,
+  StatusLabel
+} from '../../../shared/components/ResourceStatusStyles';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
-
-const CardWrapper = styled.div`
-  margin-bottom: 12px;
-`;
-
-const InfoGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
-  padding: 20px;
-`;
-
-const InfoItem = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const InfoLabel = styled.div`
-  font-size: 12px;
-  color: #79879c;
-  font-weight: 600;
-  // text-transform: uppercase;
-`;
-
-const InfoValue = styled.div`
-  font-size: 14px;
-  color: #242e42;
-  font-weight: 600;
-`;
-
-const StatusCard = styled.div`
-  background: #ffffff;
-  border: 1px solid #e3e9ef;
-  border-radius: 4px;
-  padding: 20px;
-  margin-bottom: 12px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-`;
-
-const StatusHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #f0f0f0;
-`;
-
-const StatusIcon = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: #f0f9ff;
-  color: #0369a1;
-`;
-
-const StatusTitle = styled.div`
-  font-size: 16px;
-  font-weight: 600;
-  color: #242e42;
-`;
-
-const StatusGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 24px;
-`;
-
-const StatusItem = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-`;
-
-const StatusValue = styled.div`
-  font-size: 20px;
-  font-weight: 600;
-  color: #242e42;
-  line-height: 1.2;
-`;
-
-const StatusLabel = styled.div`
-  font-size: 12px;
-  color: #79879c;
-  text-transform: uppercase;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-`;
 
 const ResourceStatus = () => {
   const [props] = useStore('RuntimeDetailProps');

@@ -10,6 +10,13 @@ import { get } from 'lodash';
 import styled from 'styled-components';
 import { SimpleCircle } from '@ks-console/shared';
 import { request, getCurrentCluster } from '../../../../utils/request';
+import {
+  CardWrapper,
+  InfoGrid,
+  InfoItem,
+  InfoLabel,
+  InfoValue
+} from '../../../shared/components/ResourceStatusStyles';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -33,41 +40,7 @@ interface Runtime {
   masterReplicas?: number;
 }
 
-const CardWrapper = styled.div`
-  margin-bottom: 12px;
-`;
 
-const InfoGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 12px;
-  
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  @media (max-width: 576px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const InfoItem = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const InfoLabel = styled.div`
-  font-weight: 600;
-  color: #242e42;
-  margin-bottom: 4px;
-  font-size: 12px;
-`;
-
-const InfoValue = styled.div`
-  color: #242e42;
-  font-size: 14px;
-`;
 
 const TopologyContainer = styled.div`
   display: flex;
