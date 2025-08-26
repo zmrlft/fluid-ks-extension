@@ -22,7 +22,7 @@ const EmptyTip = styled.div`
 `;
 
 interface FluidMetadataProps {
-  storeKey: 'DatasetDetailProps' | 'RuntimeDetailProps';
+  storeKey: 'DatasetDetailProps' | 'RuntimeDetailProps' | 'DataLoadDetailProps';
   loadingText?: string;
 }
 
