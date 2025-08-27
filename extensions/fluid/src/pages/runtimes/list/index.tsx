@@ -13,6 +13,35 @@ import { getApiPath, getWebSocketUrl, request, getCurrentClusterFromUrl } from '
 // 声明全局 t 函数（国际化）
 declare const t: (key: string) => string;
 
+// 运行时类型存储键名
+const RUNTIME_TYPE_STORAGE_KEY = 'fluid-runtime-type';
+
+// 从 localStorage 获取上次选择的运行时类型
+const getStoredRuntimeType = (): number => {
+  try {
+    const stored = localStorage.getItem(RUNTIME_TYPE_STORAGE_KEY);
+    if (stored !== null) {
+      const index = parseInt(stored, 10);
+      // 验证索引是否在有效范围内
+      if (index >= 0 && index < runtimeTypeList.length) {
+        return index;
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to read runtime type from localStorage:', error);
+  }
+  return 0; // 默认值：Alluxio
+};
+
+// 保存运行时类型到 localStorage
+const saveRuntimeType = (index: number): void => {
+  try {
+    localStorage.setItem(RUNTIME_TYPE_STORAGE_KEY, index.toString());
+  } catch (error) {
+    console.warn('Failed to save runtime type to localStorage:', error);
+  }
+};
+
 const StyledCard = styled(Card)`
   margin-bottom: 12px;
 `;
@@ -54,7 +83,7 @@ const RuntimeList: React.FC = () => {
 
   // 从URL参数获取集群信息
   const currentCluster = params.cluster || 'host';
-  const [currentRuntimeType, setCurrentRuntimeType] = useState<number>(0); // 当前选择的 Runtime 类型索引
+  const [currentRuntimeType, setCurrentRuntimeType] = useState<number>(getStoredRuntimeType()); // 从localStorage获取上次选择的运行时类型
   const [wsConnected, setWsConnected] = useState<boolean>(false);
   const tableRef = useRef<TableRef<any>>(null);
   
@@ -237,7 +266,8 @@ const RuntimeList: React.FC = () => {
   // 处理 Runtime 类型切换
   const handleRuntimeTypeChange = (index: number) => {
     setCurrentRuntimeType(index);
-      debouncedRefresh();
+    saveRuntimeType(index); // 保存到 localStorage
+    debouncedRefresh();
   };
 
   // 点击名称跳转详情页
@@ -292,7 +322,7 @@ const RuntimeList: React.FC = () => {
     {
       title: t('NAME'),
       field: 'name',
-      width: '15%',
+      width: '20%',
       searchable: true,
       render: (value: string, record: RuntimeItem) => (
         <a
@@ -309,19 +339,7 @@ const RuntimeList: React.FC = () => {
     {
       title: t('NAMESPACE'),
       field: 'namespace',
-      width: '12%',
-      canHide: true,
-    },
-    {
-      title: t('TYPE'),
-      field: 'type',
-      width: '10%',
-      canHide: true,
-    },
-    {
-      title: 'Master Replicas',
-      field: 'masterReplicas',
-      width: '12%',
+      width: '15%',
       canHide: true,
     },
     {
@@ -375,7 +393,7 @@ const RuntimeList: React.FC = () => {
     {
       title: t('CREATION_TIME'),
       field: 'creationTimestamp',
-      width: '15%',
+      width: '30%',
       canHide: true,
       sortable: true,
     },
