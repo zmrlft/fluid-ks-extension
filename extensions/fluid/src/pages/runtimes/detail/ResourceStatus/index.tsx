@@ -8,6 +8,7 @@ import { Card } from '@kubed/components';
 import { DatabaseSealDuotone, StorageDuotone, AppstoreDuotone } from '@kubed/icons';
 import { get } from 'lodash';
 import { getCurrentClusterFromUrl } from '../../../../utils/request';
+import { generateStatefulSetName } from '../../../../utils/statefulSetUtils';
 import {
   CardWrapper,
   InfoGrid,
@@ -75,7 +76,7 @@ const ResourceStatus = () => {
     const cluster = getCurrentClusterFromUrl();
     const namespace = get(detail, 'metadata.namespace', 'default');
     const runtimeName = get(detail, 'metadata.name', '');
-    const masterName = `${runtimeName}-master`;
+    const masterName = generateStatefulSetName(runtimeName, runtimeType?.kind || '', 'master');
     const url = `/clusters/${cluster}/projects/${namespace}/statefulsets/${masterName}/resource-status`;
     console.log('Opening master in new window:', masterName, 'in namespace:', namespace, 'cluster:', cluster);
     window.open(url, '_blank');
@@ -86,7 +87,7 @@ const ResourceStatus = () => {
     const cluster = getCurrentClusterFromUrl();
     const namespace = get(detail, 'metadata.namespace', 'default');
     const runtimeName = get(detail, 'metadata.name', '');
-    const workerName = `${runtimeName}-worker`;
+    const workerName = generateStatefulSetName(runtimeName, runtimeType?.kind || '', 'worker');
     const url = `/clusters/${cluster}/projects/${namespace}/statefulsets/${workerName}/resource-status`;
     console.log('Opening worker in new window:', workerName, 'in namespace:', namespace, 'cluster:', cluster);
     window.open(url, '_blank');

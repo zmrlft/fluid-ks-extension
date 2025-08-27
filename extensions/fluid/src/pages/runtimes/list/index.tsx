@@ -5,10 +5,11 @@ import { Button, Card, Banner, Select, Empty } from '@kubed/components';
 import { DataTable, TableRef, StatusIndicator } from '@ks-console/shared';
 import { useNavigate, useParams } from 'react-router-dom';
 import { RocketDuotone } from '@kubed/icons';
-import { runtimeTypeList, RuntimeTypeMeta } from '../runtimeMap';
+import { runtimeTypeList } from '../runtimeMap';
 import { transformRequestParams } from '../../../utils';
 
 import { getApiPath, getWebSocketUrl, request, getCurrentClusterFromUrl } from '../../../utils/request';
+import { generateStatefulSetName } from '../../../utils/statefulSetUtils';
 
 // 声明全局 t 函数（国际化）
 declare const t: (key: string) => string;
@@ -280,7 +281,8 @@ const RuntimeList: React.FC = () => {
   // 处理Master点击跳转
   const handleMasterClick = (runtimeName: string, namespace: string) => {
     const cluster = getCurrentClusterFromUrl();
-    const masterName = `${runtimeName}-master`;
+    const currentRuntimeTypeMeta = runtimeTypeList[currentRuntimeType];
+    const masterName = generateStatefulSetName(runtimeName, currentRuntimeTypeMeta.kind, 'master');
     const url = `/clusters/${cluster}/projects/${namespace}/statefulsets/${masterName}/resource-status`;
     console.log('Opening master in new window:', masterName, 'in namespace:', namespace, 'cluster:', cluster);
     window.open(url, '_blank');
@@ -289,7 +291,8 @@ const RuntimeList: React.FC = () => {
   // 处理Worker点击跳转
   const handleWorkerClick = (runtimeName: string, namespace: string) => {
     const cluster = getCurrentClusterFromUrl();
-    const workerName = `${runtimeName}-worker`;
+    const currentRuntimeTypeMeta = runtimeTypeList[currentRuntimeType];
+    const workerName = generateStatefulSetName(runtimeName, currentRuntimeTypeMeta.kind, 'worker');
     const url = `/clusters/${cluster}/projects/${namespace}/statefulsets/${workerName}/resource-status`;
     console.log('Opening worker in new window:', workerName, 'in namespace:', namespace, 'cluster:', cluster);
     window.open(url, '_blank');
@@ -324,7 +327,7 @@ const RuntimeList: React.FC = () => {
       field: 'name',
       width: '20%',
       searchable: true,
-      render: (value: string, record: RuntimeItem) => (
+      render: (_: string, record: RuntimeItem) => (
         <a
           onClick={(e) => {
             e.preventDefault();
