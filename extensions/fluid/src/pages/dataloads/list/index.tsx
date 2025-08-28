@@ -126,7 +126,7 @@ const DataLoadList: React.FC = () => {
     if (tableRef.current) {
       tableRef.current.refetch();
     }
-  }, 1000);
+  }, 3000);
 
   // 自定义WebSocket实现来替代DataTable的watchOptions
   useEffect(() => {
@@ -144,6 +144,8 @@ const DataLoadList: React.FC = () => {
     let reconnectCount = 0;
     const maxReconnectAttempts = 5;
     let isComponentUnmounting = false; // 添加标志变量跟踪组件卸载状态
+    let connectionStartTime = 0; // 记录连接建立的时间戳
+    const INITIAL_EVENTS_WINDOW = 2000; // 连接后2秒内的ADDED事件视为初始状态，单位毫秒
 
     const connect = () => {
       try {
@@ -155,6 +157,7 @@ const DataLoadList: React.FC = () => {
           console.log("=== WebSocket连接成功 ===");
           setWsConnected(true);
           reconnectCount = 0; // 重置重连计数
+          connectionStartTime = Date.now(); // 记录连接建立时间
 
           // WebSocket连接成功，停止轮询
           if (pollingInterval) {
@@ -173,6 +176,15 @@ const DataLoadList: React.FC = () => {
 
             // 处理不同类型的事件
             if (['ADDED', 'DELETED', 'MODIFIED'].includes(data.type)) {
+              // 跳过连接建立初期的ADDED事件，因为它们是过时的初始状态
+              if (data.type === 'ADDED' && connectionStartTime > 0) {
+                const timeSinceConnection = Date.now() - connectionStartTime;
+                if (timeSinceConnection < INITIAL_EVENTS_WINDOW) {
+                  console.log(`=== 跳过连接初期的ADDED事件 (连接后${timeSinceConnection}ms)，避免不必要的刷新 ===`);
+                  return;
+                }
+              }
+
               console.log("=== 检测到数据变化，准备防抖刷新 ===");
 
               // 清空选择状态（特别是删除事件）
