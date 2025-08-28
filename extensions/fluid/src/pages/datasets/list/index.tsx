@@ -362,30 +362,7 @@ const DatasetList: React.FC = () => {
       // 取消全选
       setSelectedDatasets([]);
     } else {
-      // 全选：由于无法直接获取表格数据，我们使用一个变通方法
-      // 通过 API 获取当前页面的数据集
-      fetchCurrentPageDatasets();
-    }
-  };
-
-  // 获取当前页面的数据集用于全选
-  const fetchCurrentPageDatasets = async () => {
-    try {
-      const url = namespace
-        ? `/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets`
-        : '/kapis/data.fluid.io/v1alpha1/datasets';
-
-      const response = await request(url);
-      if (response.ok) {
-        const data = await response.json();
-        if (data && data.items) {
-          const formattedDatasets = data.items.map(formatDataset);
-          setCurrentPageData(formattedDatasets);
-          setSelectedDatasets(formattedDatasets);
-        }
-      }
-    } catch (error) {
-      console.error('获取数据集列表失败:', error);
+      setSelectedDatasets([...currentPageData]);
     }
   };
 
@@ -473,6 +450,7 @@ const DatasetList: React.FC = () => {
       width: '10%',
       canHide: true,
       searchable: true,
+      sortable: true,
       render: (_: any, record: Dataset) => <span>{
         <StatusIndicator type={getStatusIndicatorType(get(record, 'status.phase', ''))} motion={false}>
           {get(record, 'status.phase', '-')}
