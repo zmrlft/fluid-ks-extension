@@ -24,6 +24,7 @@ import {
   StatusValue,
   StatusLabel
 } from '../../../shared/components/ResourceStatusStyles';
+import { getStatusIndicatorType } from '../../../../utils/getStatusIndicatorType';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -49,26 +50,6 @@ const ResourceStatus = () => {
     //   return get(detail, 'status.masterPhase', '-');
     // }
     return get(detail, 'status.workerPhase', '-');
-  };
-
-  // 获取状态指示器类型
-  const getStatusIndicatorType = (phase: string): 'success' | 'warning' | 'error' | 'default' => {
-    switch (phase?.toLowerCase()) {
-      case 'ready':
-      case 'running':
-      case 'bound':
-        return 'success';
-      case 'pending':
-      case 'creating':
-      case 'updating':
-        return 'warning';
-      case 'failed':
-      case 'error':
-      case 'terminating':
-        return 'error';
-      default:
-        return 'default';
-    }
   };
 
   // 处理Master点击跳转

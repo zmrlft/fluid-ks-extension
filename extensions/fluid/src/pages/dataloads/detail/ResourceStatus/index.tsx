@@ -16,6 +16,7 @@ import {
   InfoLabel, 
   InfoValue 
 } from '../../../shared/components/ResourceStatusStyles';
+import { getStatusIndicatorType } from '../../../../utils/getStatusIndicatorType';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -130,22 +131,6 @@ const ResourceStatus = () => {
       const jobName = `${dataloadName}-loader-job`;
       const url = `/clusters/${currentCluster}/projects/${namespace}/jobs/${jobName}/records`;
       window.open(url, '_blank');
-    }
-  };
-
-  const getStatusIndicatorType = (phase: string): 'success' | 'warning' | 'error' | 'default' => {
-    switch (phase?.toLowerCase()) {
-      case 'executing':
-        return 'success';
-      case 'complete':
-        return 'warning';
-      case 'failed':
-      case 'error':
-      case 'terminating':
-      case 'pending':
-        return 'error';
-      default:
-        return 'default';
     }
   };
 
