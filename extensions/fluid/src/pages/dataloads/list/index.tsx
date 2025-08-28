@@ -10,6 +10,7 @@ import { deleteResource, handleBatchResourceDelete } from '../../../utils/delete
 
 import { getApiPath, getWebSocketUrl, request, getCurrentClusterFromUrl } from '../../../utils/request';
 import CreateDataloadModal from '../components/CreateDataloadModal';
+import { getStatusIndicatorType } from '../../../utils/getStatusIndicatorType';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -410,7 +411,7 @@ const DataLoadList: React.FC = () => {
       field: 'metadata.namespace',
       width: '10%',
       canHide: true,
-      render: (value: any, record: DataLoad) => <span>{get(record, 'metadata.namespace', '-')}</span>,
+      // render: (value: any, record: DataLoad) => <span>{get(record, 'metadata.namespace', '-')}</span>,
     },
     {
       title: t('DATASET'),
@@ -425,7 +426,11 @@ const DataLoadList: React.FC = () => {
       width: '10%',
       canHide: true,
       searchable: true,
-      render: (value: any, record: DataLoad) => <span>{get(record, 'status.phase', '-')}</span>,
+      render: (value: any, record: DataLoad) => <span>{
+        <StatusIndicator type={getStatusIndicatorType(value)} motion={false}>
+            {value || '-'}
+        </StatusIndicator>
+      }</span>,
     },
     {
       title: t('POLICY'),

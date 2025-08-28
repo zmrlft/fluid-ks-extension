@@ -10,6 +10,7 @@ import { transformRequestParams } from '../../../utils';
 
 import { getApiPath, getWebSocketUrl, request, getCurrentClusterFromUrl } from '../../../utils/request';
 import { generateStatefulSetName } from '../../../utils/statefulSetUtils';
+import { getStatusIndicatorType } from '../../../utils/getStatusIndicatorType';
 
 // 声明全局 t 函数（国际化）
 declare const t: (key: string) => string;
@@ -365,7 +366,10 @@ const RuntimeList: React.FC = () => {
           href="#"
           style={{ cursor: 'pointer' }}
         >
-          {value || '-'}
+          <StatusIndicator type={getStatusIndicatorType(value)} motion={false}>
+            {value || '-'}
+          </StatusIndicator>
+
         </a>
       ),
     },
@@ -383,7 +387,9 @@ const RuntimeList: React.FC = () => {
           href="#"
           style={{ cursor: 'pointer' }}
         >
-          {value || '-'}
+          <StatusIndicator type={getStatusIndicatorType(value)} motion={false}>
+            {value || '-'}
+          </StatusIndicator>
         </a>
       ),
     },
@@ -392,6 +398,11 @@ const RuntimeList: React.FC = () => {
       field: 'fusePhase',
       width: '13%',
       canHide: true,
+      render: (value: string) => (
+        <StatusIndicator type={getStatusIndicatorType(value)} motion={false}>
+            {value || '-'}
+        </StatusIndicator>
+      )
     },
     {
       title: t('CREATION_TIME'),

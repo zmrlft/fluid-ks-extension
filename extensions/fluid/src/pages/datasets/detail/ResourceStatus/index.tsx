@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useCacheStore as useStore } from '@ks-console/shared';
+import { StatusIndicator, useCacheStore as useStore } from '@ks-console/shared';
 import { Card } from '@kubed/components';
 import { Book2Duotone, RocketDuotone, StorageDuotone, AppstoreDuotone, FolderDuotone, DatabaseSealDuotone } from '@kubed/icons';
 import { get } from 'lodash';
@@ -17,6 +17,7 @@ import {
   InfoLabel,
   InfoValue
 } from '../../../shared/components/ResourceStatusStyles';
+import { getStatusIndicatorType } from '../../../../utils/getStatusIndicatorType';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -489,7 +490,13 @@ const ResourceStatus = () => {
           <InfoGrid>
             <InfoItem>
               <InfoLabel>{t('STATUS')}</InfoLabel>
-              <InfoValue>{get(detail, 'status.phase', '-')}</InfoValue>
+              <StatusIndicator
+                    type={getStatusIndicatorType(get(detail, 'status.phase', '-'))}
+                    motion={false}
+              >
+                  <InfoValue>{get(detail, 'status.phase', '-')}</InfoValue>
+              </StatusIndicator>
+              
             </InfoItem>
             <InfoItem>
               <InfoLabel>{t('TOTAL_FILES')}</InfoLabel>
@@ -548,11 +555,8 @@ const ResourceStatus = () => {
                 showRate
                 unit='GiB'
               />
-            
             </InfoItem>
           </InfoGrid>
-          
-          
         </Card>
       </CardWrapper>
       

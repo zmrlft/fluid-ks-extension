@@ -7,9 +7,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Book2Duotone } from '@kubed/icons';
 import { transformRequestParams } from '../../../utils';
 import CreateDatasetModal from '../components/CreateDatasetModal';
-import { deleteResource, handleBatchResourceDelete } from '../../../utils/deleteResource';
+import { handleBatchResourceDelete } from '../../../utils/deleteResource';
 
 import { getApiPath, getWebSocketUrl, request } from '../../../utils/request';
+import { getStatusIndicatorType } from '../../../utils/getStatusIndicatorType';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -113,8 +114,6 @@ const DatasetList: React.FC = () => {
   const currentCluster = params.cluster || 'host';
   console.log(params,'params');
   
-  // 这个轮询机制已被WebSocket替代，移除无用代码
-
   // 获取所有命名空间
   useEffect(() => {
     const fetchNamespaces = async () => {
@@ -306,19 +305,6 @@ const DatasetList: React.FC = () => {
     };
   }, [namespace, currentCluster]);
 
-  // 监听集群切换，刷新数据表格
-  // const isFirstClusterEffect = useRef(true);
-  // useEffect(() => {
-  //   if (isFirstClusterEffect.current) {
-  //     isFirstClusterEffect.current = false;
-  //     return;
-  //   }
-  //   if (tableRef.current) {
-  //     console.log('集群切换，刷新数据表格:', currentCluster);
-  //     debouncedRefresh();
-  //   }
-  // }, [currentCluster]);
-
   // 处理命名空间变更
   const handleNamespaceChange = (value: string) => {
     setNamespace(value);
@@ -347,18 +333,6 @@ const DatasetList: React.FC = () => {
     console.log("=== 手动刷新被调用 ===");
     debouncedRefresh();
   };
-
-  // 监听tableRef的变化，添加refetch方法的代理
-  // useEffect(() => {
-  //   if (tableRef.current && tableRef.current.refetch) {
-  //     const originalRefetch = tableRef.current.refetch;
-  //     tableRef.current.refetch = (...args) => {
-  //       console.log("=== DataTable refetch 被调用 ===");
-  //       console.log("调用参数:", args);
-  //       return originalRefetch.apply(tableRef.current, args);
-  //     };
-  //   }
-  // }, [tableRef.current]);
 
   // 处理单个数据集选择
   const handleSelectDataset = (dataset: Dataset, checked: boolean) => {
@@ -487,7 +461,12 @@ const DatasetList: React.FC = () => {
       width: '10%',
       canHide: true,
       searchable: true,
-      render: (_: any, record: Dataset) => <span>{get(record, 'status.phase', '-')}</span>,
+      render: (_: any, record: Dataset) => <span>{
+        <StatusIndicator type={getStatusIndicatorType(get(record, 'status.phase', ''))} motion={false}>
+          {get(record, 'status.phase', '-')}
+        </StatusIndicator>
+      }</span>,
+      // render: (_: any, record: Dataset) => <span>{get(record, 'status.phase', '-')}</span>,
     },
     {
       title: t('DATA_SOURCE'),

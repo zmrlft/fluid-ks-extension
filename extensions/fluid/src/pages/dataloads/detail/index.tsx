@@ -14,7 +14,6 @@ import { request } from '../../../utils/request';
 import { EditYamlModal } from '@ks-console/shared';
 import { handleResourceDelete } from '../../../utils/deleteResource';
 import { createDetailTabs } from '../../../utils/detailTabs';
-import styled from 'styled-components';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
