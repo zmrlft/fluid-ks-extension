@@ -99,7 +99,7 @@ const DataLoadList: React.FC = () => {
   // 当命名空间变化时，清空选择状态和当前页面数据
   useEffect(() => {
     setSelectedDataLoads([]);
-    setCurrentPageData([]);
+    // setCurrentPageData([]);
   }, [namespace]);
 
   // 监听数据变化，当数据加载任务数量发生变化时清空选择状态
@@ -126,7 +126,7 @@ const DataLoadList: React.FC = () => {
     if (tableRef.current) {
       tableRef.current.refetch();
     }
-  }, 3000);
+  }, 1000);
 
   // 自定义WebSocket实现来替代DataTable的watchOptions
   useEffect(() => {

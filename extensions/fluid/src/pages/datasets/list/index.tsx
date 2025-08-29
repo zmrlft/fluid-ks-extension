@@ -144,7 +144,7 @@ const DatasetList: React.FC = () => {
   // 当命名空间变化时，清空选择状态和当前页面数据
   useEffect(() => {
     setSelectedDatasets([]);
-    setCurrentPageData([]);
+    // setCurrentPageData([]);
   }, [namespace]);
 
   // 监听数据变化，当数据集数量发生变化时清空选择状态
@@ -162,7 +162,7 @@ const DatasetList: React.FC = () => {
     }
 
     setPreviousDataLength(newData?.length || 0);
-    setCurrentPageData(newData || []);
+    setCurrentPageData([...newData]);
   };
 
 
@@ -173,7 +173,7 @@ const DatasetList: React.FC = () => {
     if (tableRef.current) {
       tableRef.current.refetch();
     }
-  }, 3000);
+  }, 1000);
 
   // 自定义WebSocket实现来替代DataTable的watchOptions
   useEffect(() => {
