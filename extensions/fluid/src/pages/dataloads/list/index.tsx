@@ -11,6 +11,7 @@ import { deleteResource, handleBatchResourceDelete } from '../../../utils/delete
 import { getApiPath, getWebSocketUrl, request, getCurrentClusterFromUrl } from '../../../utils/request';
 import CreateDataloadModal from '../components/CreateDataloadModal';
 import { getStatusIndicatorType } from '../../../utils/getStatusIndicatorType';
+import { useNamespaces } from '../../../utils/useNamespaces';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -80,9 +81,6 @@ const formatDataLoad = (item: Record<string, any>): DataLoad => {
 
 const DataLoadList: React.FC = () => {
   const [namespace, setNamespace] = useState<string>('');
-  const [namespaces, setNamespaces] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const [createModalVisible, setCreateModalVisible] = useState<boolean>(false);
   const [selectedDataLoads, setSelectedDataLoads] = useState<DataLoad[]>([]);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
@@ -267,45 +265,8 @@ const DataLoadList: React.FC = () => {
     };
   }, [namespace, currentCluster]);
 
-  // 监听集群切换，刷新数据表格
-  // const isFirstClusterEffect = useRef(true);
-  // useEffect(() => {
-  //   if (isFirstClusterEffect.current) {
-  //     isFirstClusterEffect.current = false;
-  //     return;
-  //   }
-  //   if (tableRef.current) {
-  //     console.log('集群切换，刷新DataLoad数据表格:', currentCluster);
-  //     debouncedRefresh();
-  //   }
-  // }, [currentCluster]);
-
-  // 获取所有命名空间
-  useEffect(() => {
-    const fetchNamespaces = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await request('/api/v1/namespaces');
-
-        if (!response.ok) {
-          throw new Error(`${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        if (data && data.items) {
-          const namespaceList = data.items.map((item: any) => item.metadata.name);
-          setNamespaces(namespaceList);
-        }
-      } catch (error) {
-        console.error('获取命名空间列表失败:', error);
-        setError(error instanceof Error ? error.message : String(error));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchNamespaces();
-  }, [currentCluster]); // 添加currentCluster依赖，集群切换时重新获取命名空间
+  // 用useNamespaces获取所有命名空间
+  const { namespaces, isLoading, error, refetchNamespaces} = useNamespaces(currentCluster)
 
   // 处理命名空间变更
   const handleNamespaceChange = (value: string) => {
