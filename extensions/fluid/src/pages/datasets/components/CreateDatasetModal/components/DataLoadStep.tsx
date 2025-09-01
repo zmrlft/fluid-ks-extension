@@ -271,21 +271,8 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
 
           {/* DataLoad基本信息 */}
           <Row gutter={[16, 0]} style={{ marginBottom: 16 }}>
-            <Col span={6}>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
-                  {t('DATALOAD_NAME')} *
-                </label>
-                <Input
-                  placeholder={t('DATALOAD_NAME_PLACEHOLDER')}
-                  value={formData.dataLoadName || ''}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    onDataChange({ dataLoadName: e.target.value })
-                  }
-                />
-              </div>
-            </Col>
-            <Col span={6}>
+            
+            {/*<Col span={6}>
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
                   {t('DATALOAD_NAMESPACE')} *
@@ -308,12 +295,26 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
                   ))}
                 </Select>
               </div>
-            </Col>
+            </Col> */}
           </Row>
 
           {/* 数据集选择 */}
           <Row gutter={[16, 0]} style={{ marginBottom: 16 }}>
-            <Col span={6}>
+            <Col span={3}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+                  {t('DATALOAD_NAME')} *
+                </label>
+                <Input
+                  placeholder={t('DATALOAD_NAME_PLACEHOLDER')}
+                  value={formData.dataLoadName || ''}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    onDataChange({ dataLoadName: e.target.value })
+                  }
+                />
+              </div>
+            </Col>
+            <Col span={4}>
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
                   {t('DATASET_NAMESPACE')} *
@@ -337,7 +338,7 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
                 </Select>
               </div>
             </Col>
-            <Col span={6}>
+            <Col span={4}>
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
                   {t('SELECT_DATASET')} *
