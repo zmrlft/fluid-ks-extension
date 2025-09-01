@@ -11,6 +11,7 @@ import { transformRequestParams } from '../../../utils';
 import { getApiPath, getWebSocketUrl, request, getCurrentClusterFromUrl } from '../../../utils/request';
 import { generateStatefulSetName } from '../../../utils/statefulSetUtils';
 import { getStatusIndicatorType } from '../../../utils/getStatusIndicatorType';
+import { useNamespaces } from '../../../utils/useNamespaces';
 
 // 声明全局 t 函数（国际化）
 declare const t: (key: string) => string;
@@ -79,9 +80,6 @@ const RuntimeList: React.FC = () => {
   const navigate = useNavigate();
   const params = useParams<{ cluster: string }>();
   const [namespace, setNamespace] = useState<string>('');
-  const [namespaces, setNamespaces] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // 从URL参数获取集群信息
   const currentCluster = params.cluster || 'host';
@@ -244,32 +242,7 @@ const RuntimeList: React.FC = () => {
   // }, [currentCluster]);
 
   // 获取所有 namespace
-  useEffect(() => {
-    const fetchNamespaces = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await request('/api/v1/namespaces');
-
-        if (!response.ok) {
-          throw new Error(`${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        if (data && data.items) {
-          const namespaceNames = data.items.map((item: any) => item.metadata.name);
-          setNamespaces(namespaceNames);
-        }
-      } catch (error) {
-        console.error('Failed to fetch namespaces:', error);
-        setError(error instanceof Error ? error.message : String(error));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchNamespaces();
-  }, [currentCluster]); // 添加currentCluster依赖，集群切换时重新获取命名空间
+  const { namespaces, isLoading, error, refetchNamespaces} = useNamespaces(currentCluster)
 
   // 处理 namespace 变更
   const handleNamespaceChange = (value: string) => {

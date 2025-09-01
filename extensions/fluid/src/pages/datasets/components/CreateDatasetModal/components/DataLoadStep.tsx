@@ -4,6 +4,7 @@ import { StepComponentProps } from '../types';
 import styled from 'styled-components';
 import { Add, Trash } from '@kubed/icons';
 import { request } from '../../../../../utils/request';
+import { useNamespaces } from '../../../../../utils/useNamespaces';
 
 declare const t: (key: string, options?: any) => string;
 
@@ -104,40 +105,13 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
     target: formData.dataLoadConfig?.target || [{ path: '/', replicas: 1 }],
     ttlSecondsAfterFinished: formData.dataLoadConfig?.ttlSecondsAfterFinished,
   });
-  const [namespaces, setNamespaces] = useState<string[]>([]);
+  // const [namespaces, setNamespaces] = useState<string[]>([]);
   // const [datasetNamespaces, setDatasetNamespaces] = useState<string[]>([]);
+  const { namespaces, isLoading, error, refetchNamespaces} = useNamespaces('')
   const [datasets, setDatasets] = useState<any[]>([]);
-  const [isLoadingNamespaces, setIsLoadingNamespaces] = useState(false);
+  // const [isLoadingNamespaces, setIsLoadingNamespaces] = useState(false);
   // const [isLoadingDatasetNamespaces, setIsLoadingDatasetNamespaces] = useState(false);
   const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
-
-  // 获取命名空间列表（用于DataLoad）
-  useEffect(() => {
-    if (isIndependent) {
-      const fetchNamespaces = async () => {
-        try {
-          setIsLoadingNamespaces(true);
-          const response = await request('/api/v1/namespaces');
-
-          if (response.ok) {
-            const data = await response.json();
-            if (data && data.items) {
-              const namespaceList = data.items.map((item: any) => item.metadata.name);
-              setNamespaces(namespaceList);
-              // 同时设置数据集命名空间列表（通常是相同的）
-              // setDatasetNamespaces(namespaceList);
-            }
-          }
-        } catch (error) {
-          console.error('获取命名空间列表失败:', error);
-        } finally {
-          setIsLoadingNamespaces(false);
-          // setIsLoadingDatasetNamespaces(false);
-        }
-      };
-      fetchNamespaces();
-    }
-  }, [isIndependent]);
 
   // 获取数据集列表
   useEffect(() => {
@@ -320,7 +294,7 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
                   placeholder={t('SELECT_DATALOAD_NAMESPACE')}
                   value={formData.dataLoadNamespace || 'default'}
                   onChange={(value) => onDataChange({ dataLoadNamespace: value })}
-                  loading={isLoadingNamespaces}
+                  loading={isLoading}
                   showSearch
                   filterOption={(input, option) =>
                     String(option?.children || '').toLowerCase().includes(input.toLowerCase())
@@ -348,7 +322,7 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
                   placeholder={t('SELECT_DATASET_NAMESPACE')}
                   value={formData.selectedDatasetNamespace}
                   onChange={(value) => onDataChange({ selectedDatasetNamespace: value, selectedDataset: '' })}
-                  loading={isLoadingNamespaces}
+                  loading={isLoading}
                   showSearch
                   filterOption={(input, option) =>
                     String(option?.children || '').toLowerCase().includes(input.toLowerCase())

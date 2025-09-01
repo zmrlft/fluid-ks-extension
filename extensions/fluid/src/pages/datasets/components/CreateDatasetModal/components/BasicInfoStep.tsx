@@ -3,6 +3,7 @@ import { Input, Select, Textarea, Row, Col } from '@kubed/components';
 import { StepComponentProps } from '../types';
 import styled from 'styled-components';
 import KVRecordInput, { validateKVPairs } from '../../../../../components/KVRecordInput';
+import { useNamespaces } from '../../../../../utils/useNamespaces';
 
 declare const t: (key: string, options?: any) => string;
 
@@ -44,15 +45,14 @@ const BasicInfoStep: React.FC<StepComponentProps> = ({
   onDataChange,
   onValidationChange,
 }) => {
-  const [namespaces, setNamespaces] = useState<string[]>([]);
   const [labels, setLabels] = useState<Array<{ key: string; value: string }>>([]);
   const [formValues, setFormValues] = useState({
     name: '',
     namespace: 'default',
     description: '',
   });
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  // 获取命名空间列表
+  const { namespaces, isLoading, error, refetchNamespaces} = useNamespaces('')
 
   // 构建标签对象的通用函数
   const buildLabelsObject = useCallback((labelArray: Array<{ key: string; value: string }>): Record<string, string> | undefined => {
@@ -95,33 +95,6 @@ const BasicInfoStep: React.FC<StepComponentProps> = ({
 
   // 计算名称验证结果
   const nameValidation = useMemo(() => validateDatasetName(formValues.name), [formValues.name, validateDatasetName]);
-
-  // 获取命名空间列表
-  useEffect(() => {
-    const fetchNamespaces = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await fetch('/api/v1/namespaces');
-        
-        if (!response.ok) {
-          throw new Error(`${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        if (data && data.items) {
-          const namespaceList = data.items.map((item: any) => item.metadata.name);
-          setNamespaces(namespaceList);
-        }
-      } catch (error) {
-        console.error('获取命名空间列表失败:', error);
-        setError(error instanceof Error ? error.message : String(error));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchNamespaces();
-  }, []);
 
   // 监听formValues状态变化，用于调试
   useEffect(() => {

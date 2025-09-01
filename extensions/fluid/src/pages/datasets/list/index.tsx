@@ -11,6 +11,7 @@ import { handleBatchResourceDelete } from '../../../utils/deleteResource';
 
 import { getApiPath, getWebSocketUrl, request } from '../../../utils/request';
 import { getStatusIndicatorType } from '../../../utils/getStatusIndicatorType';
+import { useNamespaces } from '../../../utils/useNamespaces';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -97,9 +98,6 @@ const formatDataset = (item: Record<string, any>): Dataset => {
 
 const DatasetList: React.FC = () => {
   const [namespace, setNamespace] = useState<string>('');
-  const [namespaces, setNamespaces] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const [createModalVisible, setCreateModalVisible] = useState<boolean>(false);
   const [selectedDatasets, setSelectedDatasets] = useState<Dataset[]>([]);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
@@ -114,32 +112,8 @@ const DatasetList: React.FC = () => {
   const currentCluster = params.cluster || 'host';
   console.log(params,'params');
   
-  // 获取所有命名空间
-  useEffect(() => {
-    const fetchNamespaces = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await request('/api/v1/namespaces');
-
-        if (!response.ok) {
-          throw new Error(`${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        if (data && data.items) {
-          const namespaceList = data.items.map((item: any) => item.metadata.name);
-          setNamespaces(namespaceList);
-        }
-      } catch (error) {
-        console.error('获取命名空间列表失败:', error);
-        setError(error instanceof Error ? error.message : String(error));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchNamespaces();
-  }, [currentCluster]); // 添加currentCluster依赖，集群切换时重新获取命名空间
+  // 用useNamespaces获取所有命名空间
+  const { namespaces, isLoading, error, refetchNamespaces} = useNamespaces(currentCluster);
 
   // 当命名空间变化时，清空选择状态和当前页面数据
   useEffect(() => {
