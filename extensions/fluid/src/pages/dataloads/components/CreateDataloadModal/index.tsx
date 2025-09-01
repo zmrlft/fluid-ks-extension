@@ -145,7 +145,7 @@ const CreateDataloadModal: React.FC<CreateDatasetModalProps> = ({
             kind: 'DataLoad',
             metadata: {
                 name: data.dataLoadName || `${data.selectedDataset || data.name}-dataload`,
-                namespace: data.dataLoadNamespace || data.namespace,
+                namespace: data.selectedDatasetNamespace,
             },
             spec: dataLoadSpec,
         };
@@ -170,7 +170,7 @@ const CreateDataloadModal: React.FC<CreateDatasetModalProps> = ({
                 for (const resource of resources) {
                     if (resource && typeof resource === 'object' && 'kind' in resource && 'metadata' in resource) {
                         console.log(`Creating ${resource.kind}:`, resource);
-                        await createResource(resource, resource.metadata.namespace || formData.namespace);
+                        await createResource(resource, resource.metadata.namespace || formData.selectedDatasetNamespace);
                         console.log(`Successfully created ${resource.kind}: ${resource.metadata.name}`);
                     }
                 }
@@ -178,7 +178,7 @@ const CreateDataloadModal: React.FC<CreateDatasetModalProps> = ({
                 // 表单模式：将表单数据转换为资源对象
                 const resource = formDataToDataLoadResource(formData);
                 console.log(`Creating ${resource.kind}:`, resource);
-                await createResource(resource, formData.namespace);
+                await createResource(resource, formData.selectedDatasetNamespace as string);
                 console.log(`Successfully created ${resource.kind}: ${resource.metadata.name}`);
             }
 

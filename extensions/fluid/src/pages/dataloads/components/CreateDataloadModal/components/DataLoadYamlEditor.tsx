@@ -76,7 +76,7 @@ const DataLoadYamlEditor: React.FC<DataLoadYamlEditorProps> = ({
       kind: 'DataLoad',
       metadata: {
         name: data.dataLoadName || `${data.selectedDataset || data.name}-dataload`,
-        namespace: data.dataLoadNamespace || data.namespace || 'default',
+        namespace: data.selectedDatasetNamespace || data.namespace || 'default',
         labels: {},
       },
       spec: dataLoadSpec,
