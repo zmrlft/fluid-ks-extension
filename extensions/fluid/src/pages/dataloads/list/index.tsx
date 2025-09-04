@@ -12,6 +12,7 @@ import { getApiPath, getWebSocketUrl, request, getCurrentClusterFromUrl } from '
 import CreateDataloadModal from '../components/CreateDataloadModal';
 import { getStatusIndicatorType } from '../../../utils/getStatusIndicatorType';
 import { useNamespaces } from '../../../utils/useNamespaces';
+import { useWebSocketWatch } from '../../../utils/useWebSocketWatch';
 
 // 全局t函数声明
 declare const t: (key: string, options?: any) => string;
@@ -86,7 +87,7 @@ const DataLoadList: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [currentPageData, setCurrentPageData] = useState<DataLoad[]>([]);
   const [previousDataLength, setPreviousDataLength] = useState<number>(0);
-  const [wsConnected, setWsConnected] = useState<boolean>(false);
+  // const [wsConnected, setWsConnected] = useState<boolean>(false);
   const params: Record<string, any> = useParams();
   const navigate = useNavigate();
   const tableRef = useRef<TableRef<DataLoad>>(null);
@@ -127,143 +128,13 @@ const DataLoadList: React.FC = () => {
   }, 1000);
 
   // 自定义WebSocket实现来替代DataTable的watchOptions
-  useEffect(() => {
-    const wsPath = namespace
-      ? `/apis/data.fluid.io/v1alpha1/watch/namespaces/${namespace}/dataloads?watch=true`
-      : `/apis/data.fluid.io/v1alpha1/watch/dataloads?watch=true`;
-    const wsUrl = getWebSocketUrl(wsPath);
-
-    console.log("=== 启动自定义WebSocket监听 ===");
-    console.log("WebSocket URL:", wsUrl);
-
-    let ws: WebSocket;
-    let reconnectTimeout: NodeJS.Timeout;
-    let pollingInterval: NodeJS.Timeout | undefined;
-    let reconnectCount = 0;
-    const maxReconnectAttempts = 5;
-    let isComponentUnmounting = false; // 添加标志变量跟踪组件卸载状态
-    let connectionStartTime = 0; // 记录连接建立的时间戳
-    const INITIAL_EVENTS_WINDOW = 2000; // 连接后2秒内的ADDED事件视为初始状态，单位毫秒
-
-    const connect = () => {
-      try {
-        console.log("连接WebSocket:", wsUrl);
-
-        ws = new WebSocket(wsUrl);
-
-        ws.onopen = () => {
-          console.log("=== WebSocket连接成功 ===");
-          setWsConnected(true);
-          reconnectCount = 0; // 重置重连计数
-          connectionStartTime = Date.now(); // 记录连接建立时间
-
-          // WebSocket连接成功，停止轮询
-          if (pollingInterval) {
-            console.log("WebSocket连接成功，停止轮询");
-            clearInterval(pollingInterval);
-            pollingInterval = undefined;
-          }
-        };
-
-        ws.onmessage = (event) => {
-          console.log("=== WebSocket收到消息 ===");
-          try {
-            const data = JSON.parse(event.data);
-            console.log("消息类型:", data.type);
-            console.log("对象名称:", data.object?.metadata?.name);
-
-            // 处理不同类型的事件
-            if (['ADDED', 'DELETED', 'MODIFIED'].includes(data.type)) {
-              // 跳过连接建立初期的ADDED事件，因为它们是过时的初始状态
-              if (data.type === 'ADDED' && connectionStartTime > 0) {
-                const timeSinceConnection = Date.now() - connectionStartTime;
-                if (timeSinceConnection < INITIAL_EVENTS_WINDOW) {
-                  console.log(`=== 跳过连接初期的ADDED事件 (连接后${timeSinceConnection}ms)，避免不必要的刷新 ===`);
-                  return;
-                }
-              }
-
-              console.log("=== 检测到数据变化，准备防抖刷新 ===");
-
-              // 清空选择状态（特别是删除事件）
-              if (data.type === 'DELETED') {
-                console.log("检测到删除事件，清空选择状态");
-                setSelectedDataLoads([]);
-              }
-
-              // 使用防抖函数刷新表格，1000ms内多次调用只会执行最后一次
-              debouncedRefresh();
-            }
-          } catch (e) {
-            console.error("解析WebSocket消息失败:", e);
-          }
-        };
-
-        ws.onclose = (event) => {
-          console.log("=== WebSocket连接关闭 ===", event.code, event.reason || '无reason', ws?.url);
-          setWsConnected(false);
-
-          // 检查是否是我们主动关闭的
-          const isManualClose = isComponentUnmounting;
-
-          if (!isManualClose && reconnectCount < maxReconnectAttempts) {
-            // 不是手动关闭，尝试重连
-            const delay = Math.min(1000 * Math.pow(2, reconnectCount), 10000);
-            console.log(`${delay}ms后尝试重连 (${reconnectCount + 1}/${maxReconnectAttempts})`);
-
-            reconnectTimeout = setTimeout(() => {
-              reconnectCount++;
-              connect();
-            }, delay);
-          } else if (!isManualClose && reconnectCount >= maxReconnectAttempts) {
-            // 重连次数用完，启动轮询保底方案
-            console.log("=== WebSocket重连失败，启动15秒轮询保底方案 ===");
-            pollingInterval = setInterval(() => {
-              console.log("=== 执行轮询刷新 ===");
-                debouncedRefresh();
-            }, 15000);
-          } else if (isManualClose) {
-            console.log("=== 组件卸载，正常关闭WebSocket ===");
-          }
-        };
-
-        ws.onerror = (error) => {
-          console.error("=== WebSocket错误 ===", error);
-          setWsConnected(false);
-        };
-      } catch (error) {
-        console.error("=== 创建WebSocket失败 ===", error);
-        setWsConnected(false);
-
-        // WebSocket创建失败，直接启动轮询保底方案
-        console.log("=== WebSocket创建失败，启动15秒轮询保底方案 ===");
-        pollingInterval = setInterval(() => {
-          console.log("=== 执行轮询刷新 ===");
-            debouncedRefresh();
-        }, 15000);
-      }
-    };
-
-    // 启动连接
-    connect();
-
-    return () => {
-      console.log("=== 清理WebSocket连接和轮询 ===", ws?.url);
-      isComponentUnmounting = true;
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout);
-      }
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-      }
-      if (ws) {
-        ws.close(1000, 'Component unmounting');
-      }
-      // 取消防抖函数的待执行任务
-      debouncedRefresh.cancel();
-      setWsConnected(false);
-    };
-  }, [namespace, currentCluster]);
+  const { wsConnected } = useWebSocketWatch({
+    namespace,
+    resourcePlural: 'dataloads',
+    currentCluster,
+    debouncedRefresh,
+    onResourceDeleted: () => setSelectedDataLoads([]), // 当资源被删除时清空选择状态
+  })
 
   // 用useNamespaces获取所有命名空间
   const { namespaces, isLoading, error, refetchNamespaces} = useNamespaces(currentCluster)
