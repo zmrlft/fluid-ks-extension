@@ -42,11 +42,6 @@ export const useWebSocketWatch = ({
     let connectionStartTime = 0;
 
     const connect = () => {
-      // 如果组件正在卸载，则不尝试连接 WebSocket
-      if (isComponentUnmounting.current) {
-        console.log("Component is unmounting, not attempting to connect WebSocket.");
-        return;
-      }
 
       try {
         console.log("连接WebSocket:", wsUrl);
@@ -121,7 +116,7 @@ export const useWebSocketWatch = ({
               }, refreshInterval);
             }
           } else if (isComponentUnmounting.current) {
-            console.log("=== 组件卸载，正常关闭WebSocket ===");
+            console.log(`=== ${resourcePlural}组件卸载，正常关闭WebSocket ===`);
           }
         };
 
@@ -171,7 +166,7 @@ export const useWebSocketWatch = ({
       debouncedRefresh.cancel();
       setWsConnected(false);
     };
-  }, [namespace, currentCluster, ]);//之前这里依赖还写了debouncedRefresh, onResourceDeleted, refreshInterval, initialEventsWindow，是错误的
+  }, [namespace, currentCluster, resourcePlural]);
 
   return { wsConnected };
 };
