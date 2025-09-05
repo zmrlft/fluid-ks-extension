@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import styled from 'styled-components';
 import { get, debounce } from 'lodash';
-import { Button, Card, Banner, Select, Empty } from '@kubed/components';
+import { Button, Card, Banner, Select, Empty, Modal, Input, notify } from '@kubed/components';
 import { DataTable, TableRef, StatusIndicator } from '@ks-console/shared';
 import { useNavigate, useParams } from 'react-router-dom';
-import { RocketDuotone } from '@kubed/icons';
+import { RocketDuotone, SortLargeDuotone } from '@kubed/icons';
 import { runtimeTypeList } from '../runtimeMap';
 import { transformRequestParams } from '../../../utils';
 
-import { getApiPath, getWebSocketUrl, request, getCurrentClusterFromUrl } from '../../../utils/request';
+import { getApiPath, getCurrentClusterFromUrl, requestPatch } from '../../../utils/request';
 import { generateStatefulSetName } from '../../../utils/statefulSetUtils';
 import { getStatusIndicatorType } from '../../../utils/getStatusIndicatorType';
 import { useNamespaces } from '../../../utils/useNamespaces';
@@ -87,6 +87,11 @@ const RuntimeList: React.FC = () => {
   const [currentRuntimeType, setCurrentRuntimeType] = useState<number>(getStoredRuntimeType()); // 从localStorage获取上次选择的运行时类型
   // const [wsConnected, setWsConnected] = useState<boolean>(false);
   const tableRef = useRef<TableRef<any>>(null);
+
+  // 扩缩容相关状态
+  const [showScaleModal, setShowScaleModal] = useState<boolean>(false);
+  const [selectedRuntime, setSelectedRuntime] = useState<RuntimeItem | null>(null);
+  const [newReplicas, setNewReplicas] = useState<string>('');
   
   // 创建防抖的刷新函数，1000ms内最多执行一次
   const debouncedRefresh = debounce(() => {
@@ -118,7 +123,7 @@ const RuntimeList: React.FC = () => {
   // }, [currentCluster]);
 
   // 获取所有 namespace
-  const { namespaces, isLoading, error, refetchNamespaces} = useNamespaces(currentCluster)
+  const { namespaces, isLoading, error } = useNamespaces(currentCluster)
 
   // 处理 namespace 变更
   const handleNamespaceChange = (value: string) => {
@@ -160,6 +165,54 @@ const RuntimeList: React.FC = () => {
     window.open(url, '_blank');
   };
 
+  // 处理扩缩容按钮点击
+  const handleScaleButtonClick = (runtime: RuntimeItem) => {
+    setSelectedRuntime(runtime);
+    setNewReplicas(runtime.workerReplicas.toString());
+    setShowScaleModal(true);
+  };
+
+  // 处理扩缩容操作
+  const handleScaleReplicas = async () => {
+    if (!selectedRuntime || !newReplicas.trim()) {
+      notify.error(t('REPLICAS_INPUT_REQUIRED'));
+      return;
+    }
+
+    const replicas = parseInt(newReplicas, 10);
+    if (isNaN(replicas) || replicas < 1) {
+      notify.error(t('INVALID_REPLICAS_NUMBER'));
+      return;
+    }
+
+    try {
+      const currentRuntimeTypeMeta = runtimeTypeList[currentRuntimeType];
+      const apiPath = `/apis/data.fluid.io/v1alpha1/namespaces/${selectedRuntime.namespace}/${currentRuntimeTypeMeta.plural}/${selectedRuntime.name}`;
+
+      const patchBody = {
+        spec: {
+          replicas: replicas,
+        },
+      };
+
+      await requestPatch(apiPath, patchBody);
+
+      notify.success(`${t('SCALE_SUCCESS')}: ${selectedRuntime.name} -> ${replicas} replicas`);
+      setShowScaleModal(false);
+      setSelectedRuntime(null);
+      setNewReplicas('');
+
+      // 刷新表格数据
+      if (tableRef.current) {
+        tableRef.current.refetch();
+      }
+    } catch (error) {
+      console.error('扩缩容失败:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      notify.error(`${t('SCALE_FAILED')}: ${selectedRuntime.name} - ${errorMessage}`);
+    }
+  };
+
   // 格式化 Runtime 数据
   const formatRuntime = (item: any): RuntimeItem => {
     const typeMeta = runtimeTypeList[currentRuntimeType];
@@ -168,7 +221,7 @@ const RuntimeList: React.FC = () => {
       namespace: get(item, 'metadata.namespace', ''),
       type: typeMeta.displayName,
       masterReplicas: get(item, 'spec.master.replicas', get(item, 'spec.replicas', '-')),
-      workerReplicas: get(item, 'spec.worker.replicas', get(item, 'spec.replicas', '-')),
+      workerReplicas: get(item, 'spec.replicas', '-'),
       creationTimestamp: get(item, 'metadata.creationTimestamp', ''),
       masterPhase: get(item, 'status.masterPhase', '-'),
       workerPhase: get(item, 'status.workerPhase', '-'),
@@ -187,7 +240,7 @@ const RuntimeList: React.FC = () => {
     {
       title: t('NAME'),
       field: 'name',
-      width: '20%',
+      width: '15%',
       searchable: true,
       render: (_: string, record: RuntimeItem) => (
         <a
@@ -208,10 +261,23 @@ const RuntimeList: React.FC = () => {
       canHide: true,
     },
     {
-      title: 'Worker Replicas',
+      title: 'Replicas',
       field: 'workerReplicas',
-      width: '12%',
+      width: '15%',
       canHide: true,
+      render: (value: string | number, record: RuntimeItem) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>{value}</span>
+          <Button
+            size="sm"
+            onClick={() => handleScaleButtonClick(record)}
+            style={{ padding: '4px', minWidth: '24px', height: '24px' }}
+            variant="text"
+          >
+            <SortLargeDuotone size={16}/>
+          </Button>
+        </div>
+      ),
     },
     {
       title: 'MASTER PHASE',
@@ -348,6 +414,32 @@ const RuntimeList: React.FC = () => {
           />
         )}
       </StyledCard>
+
+      {/* 扩缩容模态框 */}
+      <Modal
+        visible={showScaleModal}
+        title={`${t('SCALE_RUNTIME_REPLICAS')}: ${selectedRuntime?.name || ''}`}
+        onOk={handleScaleReplicas}
+        onCancel={() => {
+          setShowScaleModal(false);
+          setSelectedRuntime(null);
+          setNewReplicas('');
+        }}
+        width={500}
+        closable={true}
+        maskClosable={false}
+      >
+        <div style={{ padding: '24px 24px' }}>
+          <Input
+            label={t('WORKER_REPLICAS_COUNT')}
+            placeholder={t('ENTER_NEW_REPLICAS')}
+            value={newReplicas}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewReplicas(e.target.value)}
+            type="number"
+            min={1}
+          />
+        </div>
+      </Modal>
     </div>
   );
 };

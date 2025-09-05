@@ -87,6 +87,31 @@ export const getWebSocketUrl = (path: string): string => {
 };
 
 /**
+ * 封装的PATCH请求方法
+ * @param path API路径
+ * @param data 请求数据
+ * @param options 额外的fetch选项
+ * @returns Promise<any>
+ */
+export const requestPatch = async (path: string, data: any, options?: RequestInit): Promise<any> => {
+  const response = await request(path, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/merge-patch+json',
+      ...options?.headers,
+    },
+    body: JSON.stringify(data),
+    ...options,
+  });
+
+  if (!response.ok) {
+    throw new Error(`PATCH request failed: ${response.status} ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+/**
  * 获取当前集群名称
  * @returns 当前集群名称
  * @deprecated 使用 getCurrentClusterFromUrl() 替代
