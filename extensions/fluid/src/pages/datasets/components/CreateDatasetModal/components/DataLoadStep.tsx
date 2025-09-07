@@ -269,35 +269,6 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
             {t('CREATE_DATALOAD_INFO_DESC')}
           </Alert> */}
 
-          {/* DataLoad基本信息 */}
-          <Row gutter={[16, 0]} style={{ marginBottom: 16 }}>
-            
-            {/*<Col span={6}>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
-                  {t('DATALOAD_NAMESPACE')} *
-                </label>
-                <Select
-                  placeholder={t('SELECT_DATALOAD_NAMESPACE')}
-                  value={formData.dataLoadNamespace || 'default'}
-                  onChange={(value) => onDataChange({ dataLoadNamespace: value })}
-                  loading={isLoading}
-                  showSearch
-                  filterOption={(input, option) =>
-                    String(option?.children || '').toLowerCase().includes(input.toLowerCase())
-                  }
-                  style={{ width: '100%' }}
-                >
-                  {namespaces.map(ns => (
-                    <Select.Option key={ns} value={ns}>
-                      {ns}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </div>
-            </Col> */}
-          </Row>
-
           {/* 数据集选择 */}
           <Row gutter={[16, 0]} style={{ marginBottom: 16 }}>
             <Col span={3}>
@@ -417,7 +388,7 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
                   {t('TTL_SECONDS_AFTER_FINISHED')}
                 </label>
                 <InputNumber
-                  placeholder={t('TTL_SECONDS_PLACEHOLDER')}
+                  // placeholder={t('TTL_SECONDS_PLACEHOLDER')}
                   value={formValues.ttlSecondsAfterFinished}
                   onChange={(value) => handleFormChange('ttlSecondsAfterFinished', value)}
                   min={0}
