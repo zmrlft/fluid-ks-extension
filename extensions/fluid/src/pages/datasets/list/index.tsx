@@ -362,7 +362,7 @@ const DatasetList: React.FC = () => {
         className="mb12"
       />
       <StatusIndicator type={wsConnected ? 'success' : 'warning'} motion={true}>
-        {wsConnected ? '✓ WebSocket实时监控已连接' : '⚠️ 使用轮询模式（每15秒刷新）'}
+        {wsConnected ? t("WSCONNECTED_TIP") : t("WSDISCONNECTED_TIP")}
       </StatusIndicator>
       <StyledCard>
         {error ? (

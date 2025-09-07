@@ -51,7 +51,7 @@ export const MountItem: React.FC<MountItemProps> = ({
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
                 onUpdate(index, 'mountPoint', e.target.value)
               }
-              placeholder="数据源路径 (如: s3://bucket/path)"
+              placeholder={t('DATA_SOURCE_PATH_PLACEHOLDER')}
             />
           </div>
         </Col>
@@ -74,7 +74,7 @@ export const MountItem: React.FC<MountItemProps> = ({
             <FormLabel>
               {t('MOUNT_PATH')}
               <OptionalLabel>
-                (可选，如果不设置将是 /{mount.name || 'Name'})
+                {t("MOUNT_PATH_TIP") }/{mount.name || 'Name'}
               </OptionalLabel>
             </FormLabel>
             <Input
@@ -134,7 +134,7 @@ export const MountItem: React.FC<MountItemProps> = ({
           <FormLabel>
             {t('ENCRYPT_OPTIONS')}
             <OptionalLabel>
-              (可选，用于配置敏感信息如访问密钥)
+              {t("ENCRYPT_OPTIONS_tip")}
             </OptionalLabel>
           </FormLabel>
           <EncryptOptionsInput

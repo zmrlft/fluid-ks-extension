@@ -227,7 +227,7 @@ const CreateDataloadModal: React.FC<CreateDatasetModalProps> = ({
                     rel="noopener noreferrer"
                     style={{ color: '#3385ff', textDecoration: 'none', fontSize: '14px' }}
                     >
-                    Fluid api 文档参考 ^_^
+                    {t("API_REFERENCE")}
                     </a>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'absolute', right: 70, top: 20 }}>
                     <span style={{ fontSize: '14px', color: '#79879c' }}>{t('YAML_MODE')}</span>
