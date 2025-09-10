@@ -91,8 +91,34 @@ const CreateDataloadModal: React.FC<CreateDatasetModalProps> = ({
         });
       }, []);
 
+  // 重置表单
+  const handleReset = () => {
+    setStepValidations(new Map());
+    setIsYamlMode(false);
+    setFormData({
+      name: '',
+      namespace: 'default',
+      runtimeType: 'AlluxioRuntime',
+      runtimeName: '',
+      replicas: 1,
+      enableDataLoad: true, // 独立创建DataLoad时默认启用
+      dataLoadName: '',
+      dataLoadNamespace: 'default',
+      selectedDataset: '',
+      selectedDatasetNamespace: 'default',
+      dataLoadConfig: {
+      loadMetadata: false,
+        target: [ {path: "/", replicas: 1}],
+        policy: 'Once',
+        schedule: '',
+        ttlSecondsAfterFinished: undefined,
+    }
+    });
+  };
+
     const handleClose = () => {
-        onCancel();
+      handleReset();
+      onCancel();
     };
 
     // 创建单个资源的API调用
@@ -214,7 +240,7 @@ const CreateDataloadModal: React.FC<CreateDatasetModalProps> = ({
             </>
         );
     };
-        
+
     return (
         <Modal
           title={
