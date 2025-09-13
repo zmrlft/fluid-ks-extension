@@ -1,0 +1,11 @@
+frontend:
+  enabled: true
+  image:
+    repository: kubespheredev/fluid-frontend
+    tag: latest
+
+backend:
+  enabled: true
+  image:
+    repository: kubespheredev/fluid-api
+    tag: latest
