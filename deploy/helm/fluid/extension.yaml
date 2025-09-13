@@ -2,17 +2,17 @@ apiVersion: kubesphere.io/v1alpha1
 name: fluid
 version: 0.1.0
 displayName:
-  zh: 示例扩展组件
-  en: Sample Extension
+  zh: fluid
+  en: fluid
 description:
-  zh: 这是一个示例扩展组件，这是它的描述
-  en: This is a sample extension, and this is its description
+  zh: Fluid是一个开源的Kubernetes原生的分布式数据集编排和加速引擎，主要服务于云原生场景下的数据密集型应用，例如大数据应用、AI应用等。
+  en: Fluid is an open - source Kubernetes - native distributed dataset orchestration and acceleration engine, mainly serving data - intensive applications in cloud - native scenarios, such as big data applications, AI applications, etc.
 category: storage
 keywords:
   - storage
-home: https://kubesphere.io
+home: https://fluid-cloudnative.github.io/
 sources:
-  - https://github.com/kubesphere
+  - https://github.com/fluid-cloudnative/fluid
 kubeVersion: ">=1.19.0-0"
 ksVersion: ">=4.0.0-0"
 maintainers:
