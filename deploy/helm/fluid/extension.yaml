@@ -35,7 +35,7 @@ dependencies:
   - name: frontend
     tags:
     - extension
-  - name: backend
+  - name: fluid
     tags:
     - agent
 # installationMode describes how to install subcharts, it can be HostOnly or Multicluster.
