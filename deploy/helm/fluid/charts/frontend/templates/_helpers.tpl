@@ -1,5 +1,5 @@
 {{/*
-Expand the name of the chart.
+Create chart name and version as used by the chart label.
 */}}
 {{- define "frontend.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
@@ -48,15 +48,4 @@ Selector labels
 {{- define "frontend.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "frontend.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end }}
-
-{{/*
-Create the name of the service account to use
-*/}}
-{{- define "frontend.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "frontend.fullname" .) .Values.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.name }}
-{{- end }}
-{{- end }}
+{{- end }} 

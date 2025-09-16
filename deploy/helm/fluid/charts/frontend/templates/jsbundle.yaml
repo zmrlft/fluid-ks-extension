@@ -1,0 +1,12 @@
+apiVersion: extensions.kubesphere.io/v1alpha1
+kind: JSBundle
+metadata:
+  name: fluid-ui
+  labels:
+    {{- include "frontend.labels" . | nindent 4 }}
+spec:
+  rawFrom:
+    url: https://raw.githubusercontent.com/zmrlft/jstest/refs/heads/main/index.js
+# status:
+#   link: /dist/fluid-ext/index.js
+#   state: Available
