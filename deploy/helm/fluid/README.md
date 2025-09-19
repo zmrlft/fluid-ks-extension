@@ -18,6 +18,14 @@ The Fluid plugin is a KubeSphere extension based on Fluid, providing a visual in
 - After installation is complete, click the Next button to enter the cluster selection page. Select the clusters to install, click Next, and proceed to the Differential Configuration page.
 - Update the differential configuration as needed. After updating, start the installation and wait for it to complete.
 
+### Configuration
+
+Click on the extension component configuration, and control whether to install the frontend by setting enabled.
+```yaml
+frontend:
+  enabled: true
+```
+
 ### Contact and Support
 
 If you have any questions or suggestions, feel free to submit an issue or participate in community discussions.

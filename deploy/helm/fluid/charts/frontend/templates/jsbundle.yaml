@@ -1,3 +1,4 @@
+{{- if .Values.enabled }}
 apiVersion: extensions.kubesphere.io/v1alpha1
 kind: JSBundle
 metadata:
@@ -10,3 +11,5 @@ spec:
 # status:
 #   link: /dist/fluid-ext/index.js
 #   state: Available
+{{- end }}
+
