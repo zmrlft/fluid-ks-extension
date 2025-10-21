@@ -1,0 +1,38 @@
+[English](/docs/en/index.md) | [中文](/docs/zh/index.md)
+
+## 介绍
+
+Fluid是一个开源的、原生Kubernetes的分布式数据集编排器和加速器，适用于大数据和人工智能等数据密集型应用。它由云原生计算基金会（CNCF）作为沙盒项目托管。Fluid能够通过支持数据集操作，将分布式缓存系统（如Alluxio和JuiceFS）转换为具有自我管理、弹性伸缩和自我修复能力的可观测缓存服务。同时，通过数据缓存位置信息，Fluid可以为使用数据集的应用程序提供数据亲和性调度。
+
+Fluid插件则是基于Fluid的kubesphere扩展插件，提供数据集管理、数据加载、运行时管理等功能的可视化。旨在以更好的用户体验管理Fluid核心资源，解决CLI操作门槛高的问题，提升数据密集型应用的管理效率。
+
+### 主要功能
+
+- **数据集管理**：支持数据集（Dataset）的创建、查看、编辑和删除。
+![datasetlist.png](/docs/images/datasetlist.png)
+- **数据加载任务**：可视化管理数据加载（Dataload）任务，支持多种加载策略。
+![dataloadconfig.png](/docs/images/dataloadconfig.png)
+- **运行时管理**：支持多种运行时（如 Alluxio、JuiceFS、GooseFS 等）的状态监控与事件查看,通过点击replicas来扩缩容，点击worker或者master跳转对应的工作负载。
+![rumtime.png](/docs/images/rumtime.png)
+- **多集群与命名空间支持**：可切换不同集群和命名空间，适配多租户场景。
+
+### 安装
+
+- 通过 扩展市场 页面找到 fluid 扩展组件，点击 安装，选择最新版本，点击 下一步 按钮；
+![extensioncentor.png](/docs/images/extensioncentor.png)
+- 在 扩展组件安装 标签页面中，根据需求点击并修改 扩展组件配置，通过设置enabled来控制是否安装前端，配置完成后，点击 开始安装 按钮，开始安装；
+![fluidinstallconfig.png](/docs/images/fluidinstallconfig.png)
+- 安装完成后，点击 下一步 按钮，进入集群选择页面，勾选需要安装的集群，点击 下一步 按钮，进入 差异化配置 页面；
+- 根据需求更新 差异化配置，更新完成，开始安装，静待安装完成。
+
+### 配置
+
+点击扩展组件配置，通过设置enabled来控制是否安装前端
+```yaml
+frontend:
+  enabled: true
+```
+
+### 联系与支持
+
+如有问题或建议，欢迎通过 Issue 反馈或参与社区讨论。
