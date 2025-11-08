@@ -1,13 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Button, Modal, Switch, notify, Steps, TabStep } from '@kubed/components';
-import {
-  Database,
-  Cogwheel,
-  RocketDuotone,
-  DownloadDuotone,
-  FolderDuotone,
-  Book2Duotone,
-} from '@kubed/icons';
+import { RocketDuotone, DownloadDuotone, FolderDuotone, Book2Duotone } from '@kubed/icons';
 import styled from 'styled-components';
 
 const ModalContent = styled.div`
@@ -83,7 +76,6 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
   onSuccess,
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [stepValidations, setStepValidations] = useState<Record<number, boolean>>({});
   const [isYamlMode, setIsYamlMode] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -117,52 +109,20 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
     }));
   }, []);
 
-  // 渲染Modal footer
-  const renderStepsModalFooter = () => {
-    const isFirstStep = currentStep === 0;
-    const isLastStep = currentStep === STEPS.length - 1;
-    const currentStepValid = stepValidations[currentStep] !== false;
-    const currentStepConfig = STEPS[currentStep];
+  const validationHandlers = useMemo(
+    () =>
+      STEPS.map((_, index) => (isValid: boolean) => handleValidationChange(index, isValid)),
+    [handleValidationChange],
+  );
 
-    return (
-      <>
-        <Button variant="outline" onClick={handleClose}>
-          {t('CANCEL')}
-        </Button>
-        {!isFirstStep && (
-          <Button variant="outline" onClick={handlePrevious}>
-            {t('PREVIOUS')}
-          </Button>
-        )}
-        {currentStepConfig?.optional && !isLastStep && (
-          <Button variant="text" onClick={handleSkip}>
-            {t('SKIP')}
-          </Button>
-        )}
-        {!isLastStep && (
-          <Button variant="filled" onClick={handleNext} disabled={!currentStepValid}>
-            {t('NEXT')}
-          </Button>
-        )}
-        {isLastStep && (
-          <Button
-            variant="filled"
-            color="success"
-            onClick={handleCreate}
-            disabled={!currentStepValid}
-            loading={isCreating}
-          >
-            {t('CREATE')}
-          </Button>
-        )}
-      </>
-    );
-  };
+  const yamlValidationHandler = useMemo(
+    () => (isValid: boolean) => handleValidationChange(-1, isValid),
+    [handleValidationChange],
+  );
 
   // 下一步
   const handleNext = () => {
     if (currentStep < STEPS.length - 1) {
-      setCompletedSteps(prev => new Set([...prev, currentStep]));
       setCurrentStep(currentStep + 1);
     }
   };
@@ -170,10 +130,6 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
   // 上一步
   const handlePrevious = () => {
     if (currentStep > 0) {
-      setCompletedSteps(prev => {
-        prev.delete(currentStep);
-        return prev;
-      });
       setCurrentStep(currentStep - 1);
     }
   };
@@ -194,15 +150,16 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
   const createResource = async (resource: any, namespace: string) => {
     const clusterName = getClusterName();
 
+    const apiBase = `/clusters/${clusterName}/apis/data.fluid.io/v1alpha1/namespaces/${namespace}`;
     let url: string;
     if (resource.kind === 'Dataset') {
-      url = `/clusters/${clusterName}/apis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets`;
+      url = `${apiBase}/datasets`;
     } else if (resource.kind === 'DataLoad') {
-      url = `/clusters/${clusterName}/apis/data.fluid.io/v1alpha1/namespaces/${namespace}/dataloads`;
+      url = `${apiBase}/dataloads`;
     } else if (resource.kind.endsWith('Runtime')) {
       // 处理各种Runtime类型：AlluxioRuntime -> alluxioruntimes
       const runtimeType = resource.kind.toLowerCase() + 's';
-      url = `/clusters/${clusterName}/apis/data.fluid.io/v1alpha1/namespaces/${namespace}/${runtimeType}`;
+      url = `${apiBase}/${runtimeType}`;
     } else {
       throw new Error(`Unsupported resource kind: ${resource.kind}`);
     }
@@ -217,9 +174,9 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(
-        `Failed to create ${resource.kind}: ${response.status} ${response.statusText}\n${errorText}`,
-      );
+      const statusInfo = `${response.status} ${response.statusText}`;
+      const details = `Failed to create ${resource.kind}: ${statusInfo}`;
+      throw new Error([details, errorText].join('\n'));
     }
 
     return response.json();
@@ -390,7 +347,6 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
   // 重置表单
   const handleReset = () => {
     setCurrentStep(0);
-    setCompletedSteps(new Set());
     setStepValidations({});
     setIsYamlMode(false);
     setFormData({
@@ -407,6 +363,48 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
   const handleClose = () => {
     handleReset();
     onCancel();
+  };
+
+  // 渲染Modal footer
+  const renderStepsModalFooter = () => {
+    const isFirstStep = currentStep === 0;
+    const isLastStep = currentStep === STEPS.length - 1;
+    const currentStepValid = stepValidations[currentStep] !== false;
+    const currentStepConfig = STEPS[currentStep];
+
+    return (
+      <>
+        <Button variant="outline" onClick={handleClose}>
+          {t('CANCEL')}
+        </Button>
+        {!isFirstStep && (
+          <Button variant="outline" onClick={handlePrevious}>
+            {t('PREVIOUS')}
+          </Button>
+        )}
+        {currentStepConfig?.optional && !isLastStep && (
+          <Button variant="text" onClick={handleSkip}>
+            {t('SKIP')}
+          </Button>
+        )}
+        {!isLastStep && (
+          <Button variant="filled" onClick={handleNext} disabled={!currentStepValid}>
+            {t('NEXT')}
+          </Button>
+        )}
+        {isLastStep && (
+          <Button
+            variant="filled"
+            color="success"
+            onClick={handleCreate}
+            disabled={!currentStepValid}
+            loading={isCreating}
+          >
+            {t('CREATE')}
+          </Button>
+        )}
+      </>
+    );
   };
 
   return (
@@ -473,26 +471,29 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
           <YamlEditor
             formData={formData}
             onDataChange={handleDataChange}
-            onValidationChange={isValid => handleValidationChange(-1, isValid)}
+            onValidationChange={yamlValidationHandler}
           />
         ) : (
           <Steps active={currentStep} variant="tab">
-            {STEPS.map((step, index) => (
-              <TabStep
-                key={step.key}
-                label={t(step.title)}
-                description={t(step.description)}
-                completedDescription={t('FINISHED')}
-                progressDescription={t('IN_PROGRESS')}
-                icon={step.icon}
-              >
-                <step.component
-                  formData={formData}
-                  onDataChange={handleDataChange}
-                  onValidationChange={(isValid: boolean) => handleValidationChange(index, isValid)}
-                />
-              </TabStep>
-            ))}
+            {STEPS.map((step, index) => {
+              const validationHandler = validationHandlers[index]!;
+              return (
+                <TabStep
+                  key={step.key}
+                  label={t(step.title)}
+                  description={t(step.description)}
+                  completedDescription={t('FINISHED')}
+                  progressDescription={t('IN_PROGRESS')}
+                  icon={step.icon}
+                >
+                  <step.component
+                    formData={formData}
+                    onDataChange={handleDataChange}
+                    onValidationChange={validationHandler}
+                  />
+                </TabStep>
+              );
+            })}
           </Steps>
         )}
       </ModalContent>

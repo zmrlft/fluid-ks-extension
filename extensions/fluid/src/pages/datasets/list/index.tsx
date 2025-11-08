@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import styled from 'styled-components';
 import { get, debounce } from 'lodash';
 import { Button, Card, Banner, Select, Empty, Checkbox } from '@kubed/components';
@@ -9,7 +9,7 @@ import { transformRequestParams } from '../../../utils';
 import CreateDatasetModal from '../components/CreateDatasetModal';
 import { handleBatchResourceDelete } from '../../../utils/deleteResource';
 
-import { getApiPath, getWebSocketUrl, request } from '../../../utils/request';
+import { getApiPath } from '../../../utils/request';
 import { getStatusIndicatorType } from '../../../utils/getStatusIndicatorType';
 import { useNamespaces } from '../../../utils/useNamespaces';
 import { useWebSocketWatch } from '../../../utils/useWebSocketWatch';
@@ -114,7 +114,7 @@ const DatasetList: React.FC = () => {
   console.log(params, 'params');
 
   // 用useNamespaces获取所有命名空间
-  const { namespaces, isLoading, error, refetchNamespaces } = useNamespaces(currentCluster);
+  const { namespaces, isLoading, error } = useNamespaces(currentCluster);
 
   // 当命名空间变化时，清空选择状态和当前页面数据
   useEffect(() => {
@@ -141,20 +141,35 @@ const DatasetList: React.FC = () => {
   };
 
   // 创建防抖的刷新函数，1000ms内最多执行一次
-  const debouncedRefresh = debounce(() => {
-    console.log('=== 执行防抖刷新 ===');
-    if (tableRef.current) {
-      tableRef.current.refetch();
-    }
-  }, 1000);
+  const debouncedRefresh = useMemo(
+    () =>
+      debounce(() => {
+        console.log('=== 执行防抖刷新 ===');
+        if (tableRef.current) {
+          tableRef.current.refetch();
+        }
+      }, 1000),
+    [],
+  );
+
+  useEffect(
+    () => () => {
+      debouncedRefresh.cancel();
+    },
+    [debouncedRefresh],
+  );
 
   // 使用自定义WebSocket Hook 来替代DataTable的watchOptions
+  const handleResourceDeleted = useCallback(() => {
+    setSelectedDatasets([]);
+  }, []);
+
   const { wsConnected } = useWebSocketWatch({
     namespace,
     resourcePlural: 'datasets',
     currentCluster,
     debouncedRefresh,
-    onResourceDeleted: () => setSelectedDatasets([]), // 当资源被删除时清空选择状态
+    onResourceDeleted: handleResourceDeleted, // 当资源被删除时清空选择状态
   });
 
   // 处理命名空间变更

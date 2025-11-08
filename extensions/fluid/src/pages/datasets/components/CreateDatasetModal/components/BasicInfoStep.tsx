@@ -52,7 +52,7 @@ const BasicInfoStep: React.FC<StepComponentProps> = ({
     description: '',
   });
   // 获取命名空间列表
-  const { namespaces, isLoading, error, refetchNamespaces } = useNamespaces('');
+  const { namespaces, isLoading, error } = useNamespaces('');
 
   // 构建标签对象的通用函数
   const buildLabelsObject = useCallback(
@@ -102,44 +102,30 @@ const BasicInfoStep: React.FC<StepComponentProps> = ({
     [formValues.name, validateDatasetName],
   );
 
-  // 监听formValues状态变化，用于调试
-  useEffect(() => {
-    console.log('formValues状态已更新:', formValues);
-  }, [formValues]);
-
   // 初始化表单数据
   useEffect(() => {
-    // 只在真正需要初始化时才执行
-    console.log('formData变化时的状态:', formData);
-    console.log('formValues变化时的状态:', formValues);
-    if (
-      formData.name !== formValues.name ||
-      formData.namespace !== formValues.namespace ||
-      formData.description !== formValues.description
-    ) {
-      console.log('执行初始化表单数据');
+    const newFormValues = {
+      name: formData.name || '',
+      namespace: formData.namespace || 'default',
+      description: formData.description || '',
+    };
 
-      const newFormValues = {
-        name: formData.name || '',
-        namespace: formData.namespace || 'default',
-        description: formData.description || '',
-      };
-      setFormValues(newFormValues);
-      console.log('调用setFormValues，新值为:', newFormValues);
-      // 注意：这里的formValues还是旧值，因为状态更新是异步的
-      console.log('当前formValues（异步更新前）:', formValues);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync local inputs when parent data changes
+    setFormValues(prev => {
+      if (
+        prev.name === newFormValues.name &&
+        prev.namespace === newFormValues.namespace &&
+        prev.description === newFormValues.description
+      ) {
+        return prev;
+      }
+      return newFormValues;
+    });
 
-      // 使用setTimeout验证状态是否在下一个事件循环中更新
-      setTimeout(() => {
-        console.log('验证：状态更新后的formValues应该已经改变');
-      }, 0);
-    }
-
-    // 初始化时进行验证 - 使用formData作为权威数据源
-    const nameValid = validateDatasetName(formData.name || '');
-    const isValid = nameValid.isValid && (formData.namespace || 'default');
-    onValidationChange(!!isValid);
-  }, [formData.name, formData.namespace, formData.description]);
+    const nameValid = validateDatasetName(newFormValues.name);
+    const isValid = nameValid.isValid && newFormValues.namespace;
+    onValidationChange(Boolean(isValid));
+  }, [formData, onValidationChange, validateDatasetName]);
 
   // 单独处理标签初始化，避免与用户输入冲突
   useEffect(() => {
@@ -165,10 +151,11 @@ const BasicInfoStep: React.FC<StepComponentProps> = ({
 
       // 只有在标签不相等时才重新初始化
       if (!isLabelsEqual) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- keep label editor in sync with parent data
         setLabels(formDataLabels);
       }
     }
-  }, [formData.labels]);
+  }, [formData.labels, labels]);
 
   // 表单值变化处理
   const handleFormChange = useCallback(

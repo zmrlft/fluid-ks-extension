@@ -173,7 +173,15 @@ export const useWebSocketWatch = ({
       debouncedRefresh.cancel();
       setWsConnected(false);
     };
-  }, [namespace, currentCluster, resourcePlural]);
+  }, [
+    namespace,
+    currentCluster,
+    resourcePlural,
+    debouncedRefresh,
+    onResourceDeleted,
+    refreshInterval,
+    initialEventsWindow,
+  ]);
 
   return { wsConnected };
 };

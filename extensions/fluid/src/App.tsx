@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { Banner, Card } from '@kubed/components';
 import { Book2Duotone, RocketDuotone, DownloadDuotone } from '@kubed/icons';
 import { useNavigate, useLocation, useParams, Outlet } from 'react-router-dom';
 import styled from 'styled-components';
@@ -75,10 +74,6 @@ const StyledMenu = styled.div`
       }
     }
   }
-`;
-
-const PageHeader = styled(Banner)`
-  margin-bottom: 20px;
 `;
 
 const menuItems = [

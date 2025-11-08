@@ -1,15 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { Button, Modal, Switch, notify, Steps, TabStep } from '@kubed/components';
-import {
-  Database,
-  Cogwheel,
-  RocketDuotone,
-  DownloadDuotone,
-  FolderDuotone,
-  Book2Duotone,
-} from '@kubed/icons';
+import { DownloadDuotone } from '@kubed/icons';
 import styled from 'styled-components';
-import { getCurrentClusterFromUrl, request } from '../../../../utils/request';
+import { getCurrentClusterFromUrl } from '../../../../utils/request';
 
 const ModalContent = styled.div`
   max-height: calc(80vh - 120px);
@@ -140,7 +133,8 @@ const CreateDataloadModal: React.FC<CreateDatasetModalProps> = ({
 
     let url: string;
     if (resource.kind === 'DataLoad') {
-      url = `/clusters/${clusterName}/apis/data.fluid.io/v1alpha1/namespaces/${namespace}/dataloads`;
+      const apiPrefix = `/clusters/${clusterName}/apis/data.fluid.io/v1alpha1`;
+      url = `${apiPrefix}/namespaces/${namespace}/dataloads`;
     } else {
       throw new Error(`Unsupported resource kind: ${resource.kind}`);
     }
@@ -155,9 +149,9 @@ const CreateDataloadModal: React.FC<CreateDatasetModalProps> = ({
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(
-        `Failed to create ${resource.kind}: ${response.status} ${response.statusText}\n${errorText}`,
-      );
+      const statusInfo = `${response.status} ${response.statusText}`;
+      const details = `Failed to create ${resource.kind}: ${statusInfo}`;
+      throw new Error([details, errorText].join('\n'));
     }
 
     return response.json();
@@ -205,32 +199,34 @@ const CreateDataloadModal: React.FC<CreateDatasetModalProps> = ({
       if (isYamlMode) {
         // YAML模式：从YamlEditor获取YAML内容并创建
         const yaml = await import('js-yaml');
-        const resource = formDataToDataLoadResource(formData);
-        const yamlContent = yaml.dump(resource);
+        const resourceSpec = formDataToDataLoadResource(formData);
+        const yamlContent = yaml.dump(resourceSpec);
         const documents = yamlContent.split('---').filter(doc => doc.trim());
-        const resources = documents.map(doc => yaml.load(doc.trim()));
+        const parsedResources = documents.map(doc => yaml.load(doc.trim()));
 
-        for (const resource of resources) {
+        for (const parsedResource of parsedResources) {
           if (
-            resource &&
-            typeof resource === 'object' &&
-            'kind' in resource &&
-            'metadata' in resource
+            parsedResource &&
+            typeof parsedResource === 'object' &&
+            'kind' in parsedResource &&
+            'metadata' in parsedResource
           ) {
-            console.log(`Creating ${resource.kind}:`, resource);
+            console.log(`Creating ${parsedResource.kind}:`, parsedResource);
             await createResource(
-              resource,
-              resource.metadata.namespace || formData.selectedDatasetNamespace,
+              parsedResource,
+              parsedResource.metadata.namespace || formData.selectedDatasetNamespace,
             );
-            console.log(`Successfully created ${resource.kind}: ${resource.metadata.name}`);
+            console.log(
+              `Successfully created ${parsedResource.kind}: ${parsedResource.metadata.name}`,
+            );
           }
         }
       } else {
         // 表单模式：将表单数据转换为资源对象
-        const resource = formDataToDataLoadResource(formData);
-        console.log(`Creating ${resource.kind}:`, resource);
-        await createResource(resource, formData.selectedDatasetNamespace as string);
-        console.log(`Successfully created ${resource.kind}: ${resource.metadata.name}`);
+        const resourceSpec = formDataToDataLoadResource(formData);
+        console.log(`Creating ${resourceSpec.kind}:`, resourceSpec);
+        await createResource(resourceSpec, formData.selectedDatasetNamespace as string);
+        console.log(`Successfully created ${resourceSpec.kind}: ${resourceSpec.metadata.name}`);
       }
 
       notify.success(String(t('CREATE_DATALOAD_SUCCESS')));

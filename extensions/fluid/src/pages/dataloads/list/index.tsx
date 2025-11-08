@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import styled from 'styled-components';
 import { get, debounce } from 'lodash';
 import { Button, Card, Banner, Select, Empty, Checkbox } from '@kubed/components';
@@ -6,14 +6,9 @@ import { DataTable, TableRef, StatusIndicator } from '@ks-console/shared';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DownloadDuotone } from '@kubed/icons';
 import { transformRequestParams } from '../../../utils';
-import { deleteResource, handleBatchResourceDelete } from '../../../utils/deleteResource';
+import { handleBatchResourceDelete } from '../../../utils/deleteResource';
 
-import {
-  getApiPath,
-  getWebSocketUrl,
-  request,
-  getCurrentClusterFromUrl,
-} from '../../../utils/request';
+import { getApiPath } from '../../../utils/request';
 import CreateDataloadModal from '../components/CreateDataloadModal';
 import { getStatusIndicatorType } from '../../../utils/getStatusIndicatorType';
 import { useNamespaces } from '../../../utils/useNamespaces';
@@ -125,24 +120,39 @@ const DataLoadList: React.FC = () => {
   };
 
   // 创建防抖的刷新函数，1000ms内最多执行一次
-  const debouncedRefresh = debounce(() => {
-    console.log('=== 执行防抖刷新 ===');
-    if (tableRef.current) {
-      tableRef.current.refetch();
-    }
-  }, 1000);
+  const debouncedRefresh = useMemo(
+    () =>
+      debounce(() => {
+        console.log('=== 执行防抖刷新 ===');
+        if (tableRef.current) {
+          tableRef.current.refetch();
+        }
+      }, 1000),
+    [],
+  );
+
+  useEffect(
+    () => () => {
+      debouncedRefresh.cancel();
+    },
+    [debouncedRefresh],
+  );
 
   // 自定义WebSocket实现来替代DataTable的watchOptions
+  const handleResourceDeleted = useCallback(() => {
+    setSelectedDataLoads([]);
+  }, []);
+
   const { wsConnected } = useWebSocketWatch({
     namespace,
     resourcePlural: 'dataloads',
     currentCluster,
     debouncedRefresh,
-    onResourceDeleted: () => setSelectedDataLoads([]), // 当资源被删除时清空选择状态
+    onResourceDeleted: handleResourceDeleted, // 当资源被删除时清空选择状态
   });
 
   // 用useNamespaces获取所有命名空间
-  const { namespaces, isLoading, error, refetchNamespaces } = useNamespaces(currentCluster);
+  const { namespaces, isLoading, error } = useNamespaces(currentCluster);
 
   // 处理命名空间变更
   const handleNamespaceChange = (value: string) => {
@@ -151,7 +161,6 @@ const DataLoadList: React.FC = () => {
 
   // 点击名称跳转到详情页的函数
   const handleNameClick = (name: string, ns: string) => {
-    const currentCluster = getCurrentClusterFromUrl();
     const url = `/fluid/${currentCluster}/${ns}/dataloads/${name}/resource-status`;
     navigate(url);
   };
@@ -286,7 +295,7 @@ const DataLoadList: React.FC = () => {
       width: '10%',
       canHide: true,
       searchable: true,
-      render: (value: any, record: DataLoad) => (
+      render: (value: any) => (
         <span>
           {
             <StatusIndicator type={getStatusIndicatorType(value)} motion={false}>

@@ -23,7 +23,7 @@ const DataSourceStep: React.FC<StepComponentProps> = ({
   useEffect(() => {
     const hasValidMount = mounts.some(mount => mount.mountPoint.trim() !== '');
     onValidationChange(hasValidMount);
-  }, [mounts]); // 移除 onValidationChange 依赖，避免无限循环
+  }, [mounts, onValidationChange]);
 
   // 更新表单数据
   const updateFormData = (newMounts: Mount[]) => {

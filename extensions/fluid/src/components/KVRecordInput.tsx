@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Input, Button } from '@kubed/components';
-import { Trash, Add } from '@kubed/icons';
+import { Trash } from '@kubed/icons';
 import styled from 'styled-components';
 
 declare const t: (key: string, options?: any) => string;

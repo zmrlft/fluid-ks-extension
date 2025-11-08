@@ -77,9 +77,20 @@ const RuntimeStep: React.FC<StepComponentProps> = ({
 
   // 初始化表单数据
   useEffect(() => {
-    setFormValues({
+    const nextValues = {
       runtimeType: formData.runtimeType || 'AlluxioRuntime',
       replicas: formData.replicas || 1,
+    };
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- update runtime form cache when props change
+    setFormValues(prev => {
+      if (
+        prev.runtimeType === nextValues.runtimeType &&
+        prev.replicas === nextValues.replicas
+      ) {
+        return prev;
+      }
+      return nextValues;
     });
   }, [formData]);
 
@@ -99,7 +110,7 @@ const RuntimeStep: React.FC<StepComponentProps> = ({
         },
       });
     }
-  }, []);
+  }, [formData.tieredStore, onDataChange]);
 
   // 表单值变化处理
   const handleFormChange = (field: string, value: any) => {

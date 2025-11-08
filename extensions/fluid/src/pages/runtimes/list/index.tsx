@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import styled from 'styled-components';
 import { get, debounce } from 'lodash';
 import { Button, Card, Banner, Select, Empty, Modal, Input, notify } from '@kubed/components';
@@ -84,22 +84,44 @@ const RuntimeList: React.FC = () => {
 
   // 从URL参数获取集群信息
   const currentCluster = params.cluster || 'host';
-  const [currentRuntimeType, setCurrentRuntimeType] = useState<number>(getStoredRuntimeType()); // 从localStorage获取上次选择的运行时类型
+  const [currentRuntimeType, setCurrentRuntimeType] =
+    useState<number>(getStoredRuntimeType());
+  // 从localStorage获取上次选择的运行时类型
   // const [wsConnected, setWsConnected] = useState<boolean>(false);
   const tableRef = useRef<TableRef<any>>(null);
+  const [refreshToken, setRefreshToken] = useState(0);
 
   // 扩缩容相关状态
   const [showScaleModal, setShowScaleModal] = useState<boolean>(false);
   const [selectedRuntime, setSelectedRuntime] = useState<RuntimeItem | null>(null);
   const [newReplicas, setNewReplicas] = useState<string>('');
 
-  // 创建防抖的刷新函数，1000ms内最多执行一次
-  const debouncedRefresh = debounce(() => {
-    console.log('=== 执行防抖刷新 ===');
+  const triggerRefetch = useCallback(() => {
+    setRefreshToken(Date.now());
+  }, []);
+
+  // 创建防抖的刷新函数，3000ms内最多执行一次
+  const debouncedRefresh = useMemo(
+    () =>
+      debounce(() => {
+        console.log('=== 执行防抖刷新 ===');
+        triggerRefetch();
+      }, 3000),
+    [triggerRefetch],
+  );
+
+  useEffect(() => {
+    return () => {
+      debouncedRefresh.cancel();
+    };
+  }, [debouncedRefresh]);
+
+  useEffect(() => {
+    if (!refreshToken) return;
     if (tableRef.current) {
       tableRef.current.refetch();
     }
-  }, 3000);
+  }, [refreshToken]);
 
   // 自定义WebSocket实现来监控当前选中的运行时类型
   const { wsConnected } = useWebSocketWatch({
@@ -146,16 +168,25 @@ const RuntimeList: React.FC = () => {
   };
 
   // 处理Master点击跳转
-  const handleMasterClick = (runtimeName: string, namespace: string) => {
+  const handleMasterClick = (runtimeName: string, runtimeNamespace: string) => {
     const cluster = getCurrentClusterFromUrl();
     const currentRuntimeTypeMeta = runtimeTypeList[currentRuntimeType];
     const masterName = generateStatefulSetName(runtimeName, currentRuntimeTypeMeta.kind, 'master');
-    const url = `/clusters/${cluster}/projects/${namespace}/statefulsets/${masterName}/resource-status`;
+    const masterUrl = [
+      'clusters',
+      cluster,
+      'projects',
+      runtimeNamespace,
+      'statefulsets',
+      masterName,
+      'resource-status',
+    ].join('/');
+    const url = `/${masterUrl}`;
     console.log(
       'Opening master in new window:',
       masterName,
       'in namespace:',
-      namespace,
+      runtimeNamespace,
       'cluster:',
       cluster,
     );
@@ -163,16 +194,25 @@ const RuntimeList: React.FC = () => {
   };
 
   // 处理Worker点击跳转
-  const handleWorkerClick = (runtimeName: string, namespace: string) => {
+  const handleWorkerClick = (runtimeName: string, runtimeNamespace: string) => {
     const cluster = getCurrentClusterFromUrl();
     const currentRuntimeTypeMeta = runtimeTypeList[currentRuntimeType];
     const workerName = generateStatefulSetName(runtimeName, currentRuntimeTypeMeta.kind, 'worker');
-    const url = `/clusters/${cluster}/projects/${namespace}/statefulsets/${workerName}/resource-status`;
+    const workerUrl = [
+      'clusters',
+      cluster,
+      'projects',
+      runtimeNamespace,
+      'statefulsets',
+      workerName,
+      'resource-status',
+    ].join('/');
+    const url = `/${workerUrl}`;
     console.log(
       'Opening worker in new window:',
       workerName,
       'in namespace:',
-      namespace,
+      runtimeNamespace,
       'cluster:',
       cluster,
     );
@@ -201,7 +241,9 @@ const RuntimeList: React.FC = () => {
 
     try {
       const currentRuntimeTypeMeta = runtimeTypeList[currentRuntimeType];
-      const apiPath = `/apis/data.fluid.io/v1alpha1/namespaces/${selectedRuntime.namespace}/${currentRuntimeTypeMeta.plural}/${selectedRuntime.name}`;
+      const runtimeNamespace = selectedRuntime.namespace;
+      const namespacePrefix = `/apis/data.fluid.io/v1alpha1/namespaces/${runtimeNamespace}`;
+      const apiPath = `${namespacePrefix}/${currentRuntimeTypeMeta.plural}/${selectedRuntime.name}`;
 
       const patchBody = {
         spec: {
@@ -220,9 +262,9 @@ const RuntimeList: React.FC = () => {
       if (tableRef.current) {
         tableRef.current.refetch();
       }
-    } catch (error) {
-      console.error('扩缩容失败:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
+    } catch (err) {
+      console.error('扩缩容失败:', err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
       notify.error(`${t('SCALE_FAILED')}: ${selectedRuntime.name} - ${errorMessage}`);
     }
   };
@@ -230,9 +272,13 @@ const RuntimeList: React.FC = () => {
   // 格式化 Runtime 数据
   const formatRuntime = (item: any): RuntimeItem => {
     const typeMeta = runtimeTypeList[currentRuntimeType];
+    const metadataName = get(item, 'metadata.name', '');
+    const metadataNamespace = get(item, 'metadata.namespace', '');
+    const fallbackUid = `${metadataNamespace}-${metadataName}-${typeMeta.kind}`;
+
     return {
-      name: get(item, 'metadata.name', ''),
-      namespace: get(item, 'metadata.namespace', ''),
+      name: metadataName,
+      namespace: metadataNamespace,
       type: typeMeta.displayName,
       masterReplicas: get(item, 'spec.master.replicas', get(item, 'spec.replicas', '-')),
       workerReplicas: get(item, 'spec.replicas', '-'),
@@ -242,13 +288,9 @@ const RuntimeList: React.FC = () => {
       fusePhase: get(item, 'status.fusePhase', '-'),
       raw: item,
       metadata: {
-        name: get(item, 'metadata.name', ''),
-        namespace: get(item, 'metadata.namespace', ''),
-        uid: get(
-          item,
-          'metadata.uid',
-          `${get(item, 'metadata.namespace', '')}-${get(item, 'metadata.name', '')}-${typeMeta.kind}`,
-        ),
+        name: metadataName,
+        namespace: metadataNamespace,
+        uid: get(item, 'metadata.uid', fallbackUid),
       },
     };
   };

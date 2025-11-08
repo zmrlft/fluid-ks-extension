@@ -100,7 +100,7 @@ const DataLoadYamlEditor: React.FC<DataLoadYamlEditorProps> = ({
         throw new Error('YAML must contain a DataLoad resource');
       }
 
-      const formData: DatasetFormData = {
+      const parsedFormData: DatasetFormData = {
         name: resource.metadata?.name || '',
         namespace: resource.metadata?.namespace || 'default',
         runtimeType: 'AlluxioRuntime',
@@ -121,7 +121,7 @@ const DataLoadYamlEditor: React.FC<DataLoadYamlEditorProps> = ({
         dataLoadSpec: resource.spec ? { ...resource.spec } : undefined,
       };
 
-      return formData;
+      return parsedFormData;
     } catch (err) {
       console.error('YAML parsing error:', err);
       return null;
@@ -130,9 +130,9 @@ const DataLoadYamlEditor: React.FC<DataLoadYamlEditorProps> = ({
 
   // 初始化YAML内容
   useEffect(() => {
-    const yaml = formDataToYaml(formData);
-    setYamlContent(yaml);
-  }, []);
+    const nextYaml = formDataToYaml(formData);
+    setYamlContent(nextYaml);
+  }, [formData]);
 
   // 处理YAML内容变化
   const handleYamlChange = (value: string) => {

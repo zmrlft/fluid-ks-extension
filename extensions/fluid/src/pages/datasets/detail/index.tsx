@@ -119,8 +119,8 @@ const DatasetDetail: React.FC = () => {
         const data = await response.json();
         setDataset(data);
         setError(false);
-      } catch (error) {
-        console.error('Failed to fetch dataset details:', error);
+      } catch (err) {
+        console.error('Failed to fetch dataset details:', err);
         setError(true);
       } finally {
         setLoading(false);
@@ -140,7 +140,7 @@ const DatasetDetail: React.FC = () => {
       isLoading: loading,
       isError: error,
     });
-  }, [dataset, loading, error]);
+  }, [dataset, loading, error, setDetailProps]);
 
   // 定义标签页
   const tabs = useMemo(() => {

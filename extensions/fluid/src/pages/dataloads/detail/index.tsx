@@ -101,8 +101,8 @@ const DataLoadDetail: React.FC = () => {
         const data = await response.json();
         setDataload(data);
         setError(false);
-      } catch (error) {
-        console.error('Failed to fetch dataload details:', error);
+      } catch (err) {
+        console.error('Failed to fetch dataload details:', err);
         setError(true);
       } finally {
         setLoading(false);
@@ -122,7 +122,7 @@ const DataLoadDetail: React.FC = () => {
       isLoading: loading,
       isError: error,
     });
-  }, [dataload, loading, error]);
+  }, [dataload, loading, error, setDetailProps]);
 
   // 定义标签页
   const tabs = useMemo(() => {

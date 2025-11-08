@@ -192,12 +192,6 @@ const ResourceStatus = () => {
   const [pvcExists, setPvcExists] = useState<boolean>(false);
   const [pvcLoading, setPvcLoading] = useState<boolean>(false);
 
-  // 解析缓存百分比
-  const getCachePercentage = () => {
-    const percentage = get(detail, 'status.cacheStates.cachedPercentage', '0%');
-    return parseInt(percentage.replace('%', ''), 10) || 0;
-  };
-
   // 将不同数据单位统一转换为 GiB
   const convertUnit = (value: string): number => {
     if (!value || value === '-') return 0;
@@ -331,7 +325,16 @@ const ResourceStatus = () => {
     const namespace = get(detail, 'metadata.namespace');
     const datasetName = get(detail, 'metadata.name');
     // 根据提供的路径格式: /clusters/host/projects/{namespace}/volumes/{pvcName}/resource-status
-    const url = `/clusters/${currentCluster}/projects/${namespace}/volumes/${datasetName}/resource-status`;
+    const pvcUrl = [
+      'clusters',
+      currentCluster,
+      'projects',
+      namespace,
+      'volumes',
+      datasetName,
+      'resource-status',
+    ].join('/');
+    const url = `/${pvcUrl}`;
     console.log(
       'Opening PVC in new window:',
       datasetName,

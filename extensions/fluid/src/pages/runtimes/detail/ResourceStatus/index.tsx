@@ -58,7 +58,16 @@ const ResourceStatus = () => {
     const namespace = get(detail, 'metadata.namespace', 'default');
     const runtimeName = get(detail, 'metadata.name', '');
     const masterName = generateStatefulSetName(runtimeName, runtimeType?.kind || '', 'master');
-    const url = `/clusters/${cluster}/projects/${namespace}/statefulsets/${masterName}/resource-status`;
+    const masterUrl = [
+      'clusters',
+      cluster,
+      'projects',
+      namespace,
+      'statefulsets',
+      masterName,
+      'resource-status',
+    ].join('/');
+    const url = `/${masterUrl}`;
     console.log(
       'Opening master in new window:',
       masterName,
@@ -76,7 +85,16 @@ const ResourceStatus = () => {
     const namespace = get(detail, 'metadata.namespace', 'default');
     const runtimeName = get(detail, 'metadata.name', '');
     const workerName = generateStatefulSetName(runtimeName, runtimeType?.kind || '', 'worker');
-    const url = `/clusters/${cluster}/projects/${namespace}/statefulsets/${workerName}/resource-status`;
+    const workerUrl = [
+      'clusters',
+      cluster,
+      'projects',
+      namespace,
+      'statefulsets',
+      workerName,
+      'resource-status',
+    ].join('/');
+    const url = `/${workerUrl}`;
     console.log(
       'Opening worker in new window:',
       workerName,

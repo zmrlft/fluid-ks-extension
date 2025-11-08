@@ -41,10 +41,6 @@ const EditorWrapper = styled.div`
   overflow: hidden;
 `;
 
-const HiddenFileInput = styled.input`
-  display: none;
-`;
-
 const YamlEditor: React.FC<YamlEditorProps> = ({ formData, onDataChange, onValidationChange }) => {
   const [yamlContent, setYamlContent] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -170,7 +166,7 @@ const YamlEditor: React.FC<YamlEditorProps> = ({ formData, onDataChange, onValid
       const description = allAnnotations['data.fluid.io/description'] || '';
       delete allAnnotations['data.fluid.io/description'];
 
-      const formData: DatasetFormData = {
+      const parsedFormData: DatasetFormData = {
         name: dataset.metadata?.name || '',
         namespace: dataset.metadata?.namespace || 'default',
         description,
@@ -189,18 +185,18 @@ const YamlEditor: React.FC<YamlEditorProps> = ({ formData, onDataChange, onValid
         enableDataLoad: !!dataLoad,
         dataLoadConfig: dataLoad
           ? {
-              loadMetadata: dataLoad.spec?.loadMetadata || true,
-              target: dataLoad.spec?.target || [],
-              policy: dataLoad.spec?.policy || 'Once',
-              schedule: dataLoad.spec?.schedule,
-              ttlSecondsAfterFinished: dataLoad.spec?.ttlSecondsAfterFinished,
-            }
+            loadMetadata: dataLoad.spec?.loadMetadata || true,
+            target: dataLoad.spec?.target || [],
+            policy: dataLoad.spec?.policy || 'Once',
+            schedule: dataLoad.spec?.schedule,
+            ttlSecondsAfterFinished: dataLoad.spec?.ttlSecondsAfterFinished,
+          }
           : undefined,
         // 保存完整的DataLoad spec
         dataLoadSpec: dataLoad?.spec ? { ...dataLoad.spec } : undefined,
       };
 
-      return formData;
+      return parsedFormData;
     } catch (err) {
       console.error('YAML parsing error:', err);
       return null;
@@ -209,9 +205,9 @@ const YamlEditor: React.FC<YamlEditorProps> = ({ formData, onDataChange, onValid
 
   // 初始化YAML内容
   useEffect(() => {
-    const yaml = formDataToYaml(formData);
-    setYamlContent(yaml);
-  }, []);
+    const initialYaml = formDataToYaml(formData);
+    setYamlContent(initialYaml);
+  }, [formData]);
 
   // 处理YAML内容变化
   const handleYamlChange = (value: string) => {
@@ -283,13 +279,6 @@ const YamlEditor: React.FC<YamlEditorProps> = ({ formData, onDataChange, onValid
       <EditorWrapper>
         <CodeEditor value={yamlContent} onChange={handleYamlChange} />
       </EditorWrapper>
-
-      {/* <HiddenFileInput
-        id="yaml-file-input"
-        type="file"
-        accept=".yaml,.yml"
-        onChange={handleUpload}
-      /> */}
     </EditorContainer>
   );
 };

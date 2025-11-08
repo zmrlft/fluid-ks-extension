@@ -1,16 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Form,
-  FormItem,
-  Input,
-  Select,
-  Switch,
-  InputNumber,
-  Row,
-  Col,
-  Button,
-  Alert,
-} from '@kubed/components';
+import { Input, Select, Switch, InputNumber, Row, Col, Alert } from '@kubed/components';
 import { StepComponentProps } from '../types';
 import styled from 'styled-components';
 import { Add, Trash } from '@kubed/icons';
@@ -22,19 +11,6 @@ declare const t: (key: string, options?: any) => string;
 const StepContainer = styled.div`
   padding: 24px;
   min-height: 400px;
-`;
-
-const StepTitle = styled.h3`
-  font-size: 16px;
-  font-weight: 600;
-  color: #242e42;
-  margin-bottom: 8px;
-`;
-
-const StepDescription = styled.p`
-  font-size: 14px;
-  color: #79879c;
-  margin-bottom: 24px;
 `;
 
 const ConfigSection = styled.div<{ disabled?: boolean }>`
@@ -116,7 +92,7 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
   });
   // const [namespaces, setNamespaces] = useState<string[]>([]);
   // const [datasetNamespaces, setDatasetNamespaces] = useState<string[]>([]);
-  const { namespaces, isLoading, error, refetchNamespaces } = useNamespaces('');
+  const { namespaces, isLoading } = useNamespaces('');
   const [datasets, setDatasets] = useState<any[]>([]);
   // const [isLoadingNamespaces, setIsLoadingNamespaces] = useState(false);
   // const [isLoadingDatasetNamespaces, setIsLoadingDatasetNamespaces] = useState(false);
@@ -128,7 +104,8 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
       const fetchDatasets = async () => {
         try {
           setIsLoadingDatasets(true);
-          const url = `/kapis/data.fluid.io/v1alpha1/namespaces/${formData.selectedDatasetNamespace}/datasets`;
+          const datasetNamespace = formData.selectedDatasetNamespace;
+          const url = `/kapis/data.fluid.io/v1alpha1/namespaces/${datasetNamespace}/datasets`;
           const response = await request(url);
 
           if (response.ok) {
@@ -137,8 +114,8 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
               setDatasets(data.items);
             }
           }
-        } catch (error) {
-          console.error('获取数据集列表失败:', error);
+        } catch (err) {
+          console.error('获取数据集列表失败:', err);
         } finally {
           setIsLoadingDatasets(false);
         }
@@ -161,7 +138,12 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
     });
 
     if (dataLoadConfig?.target && dataLoadConfig.target.length > 0) {
-      setTargets(dataLoadConfig.target.map(t => ({ ...t, replicas: t.replicas || 1 })));
+      setTargets(
+        dataLoadConfig.target.map(targetItem => ({
+          ...targetItem,
+          replicas: targetItem.replicas || 1,
+        })),
+      );
     }
   }, [formData, isIndependent]);
 
@@ -184,12 +166,12 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
       enableDataLoad: valuesToUse.enableDataLoad,
       dataLoadConfig: valuesToUse.enableDataLoad
         ? {
-            loadMetadata: valuesToUse.loadMetadata,
-            target: targetsToUse,
-            policy: valuesToUse.policy,
-            schedule: valuesToUse.policy === 'Cron' ? valuesToUse.schedule : undefined,
-            ttlSecondsAfterFinished: valuesToUse.ttlSecondsAfterFinished,
-          }
+          loadMetadata: valuesToUse.loadMetadata,
+          target: targetsToUse,
+          policy: valuesToUse.policy,
+          schedule: valuesToUse.policy === 'Cron' ? valuesToUse.schedule : undefined,
+          ttlSecondsAfterFinished: valuesToUse.ttlSecondsAfterFinished,
+        }
         : undefined,
       // 保留现有的dataLoadSpec配置
     });

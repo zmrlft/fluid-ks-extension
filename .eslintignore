@@ -1,4 +1,5 @@
 dist/
+extensions/**/dist/
 build/
 cypress/
 jest/

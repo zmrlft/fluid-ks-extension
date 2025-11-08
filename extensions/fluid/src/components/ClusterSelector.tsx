@@ -62,9 +62,9 @@ const ClusterSelector: React.FC = () => {
         })) || [];
 
       setClusters(clusterList);
-    } catch (error) {
-      console.error('获取集群列表失败:', error);
-      setError(error instanceof Error ? error.message : '获取集群列表失败');
+    } catch (err) {
+      console.error('获取集群列表失败:', err);
+      setError(err instanceof Error ? err.message : '获取集群列表失败');
     } finally {
       setIsLoading(false);
     }

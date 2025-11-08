@@ -124,7 +124,15 @@ const ResourceStatus = () => {
       get(detail, 'metadata.namespace'),
     );
     if (datasetName && datasetNamespace) {
-      const url = `/fluid/${currentCluster}/${datasetNamespace}/datasets/${datasetName}/resource-status`;
+      const datasetDetailUrl = [
+        'fluid',
+        currentCluster,
+        datasetNamespace,
+        'datasets',
+        datasetName,
+        'resource-status',
+      ].join('/');
+      const url = `/${datasetDetailUrl}`;
       window.open(url, '_blank');
     }
   };

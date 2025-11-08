@@ -3,7 +3,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Loading } from '@kubed/components';
 import { useCacheStore as useStore, yaml } from '@ks-console/shared';
 import { DetailPagee } from '@ks-console/shared';
@@ -47,7 +47,6 @@ const RuntimeDetail: React.FC = () => {
     namespace: string;
     name: string;
   }>();
-  const navigate = useNavigate();
   const [runtimeInfo, setRuntimeInfo] = useState<RuntimeTypeInfo | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<boolean>(false);
@@ -82,7 +81,8 @@ const RuntimeDetail: React.FC = () => {
         // 尝试不同类型的运行时API
         for (const typeMeta of runtimeTypeList) {
           try {
-            const apiPath = `/apis/data.fluid.io/v1alpha1/namespaces/${namespace}/${typeMeta.plural}/${name}`;
+            const apiPrefix = `/apis/data.fluid.io/v1alpha1/namespaces/${namespace}`;
+            const apiPath = `${apiPrefix}/${typeMeta.plural}/${name}`;
             const response = await request(apiPath);
 
             if (response.ok) {
@@ -99,8 +99,8 @@ const RuntimeDetail: React.FC = () => {
 
         // 如果所有类型都尝试失败了
         throw new Error('Runtime not found in any supported type');
-      } catch (error) {
-        console.error('Failed to fetch runtime details:', error);
+      } catch (err) {
+        console.error('Failed to fetch runtime details:', err);
         setError(true);
       } finally {
         setLoading(false);
@@ -114,17 +114,15 @@ const RuntimeDetail: React.FC = () => {
 
   // 更新全局状态
   useEffect(() => {
-    setDetailProps({
+    setDetailProps((prev: any) => ({
+      ...prev,
       module,
       detail: runtimeInfo?.runtime as any,
       isLoading: loading,
       isError: error,
-    });
-    // 将runtimeType单独存储
-    if (runtimeInfo?.typeMeta) {
-      (setDetailProps as any)((prev: any) => ({ ...prev, runtimeType: runtimeInfo.typeMeta }));
-    }
-  }, [runtimeInfo, loading, error]);
+      runtimeType: runtimeInfo?.typeMeta,
+    }));
+  }, [runtimeInfo, loading, error, module, setDetailProps]);
 
   // 定义标签页
   const tabs = useMemo(() => {
