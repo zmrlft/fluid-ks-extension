@@ -23,11 +23,11 @@ export function createDetailTabs(
   cluster: string,
   namespace: string,
   name: string,
-  module: 'datasets' | 'runtimes' | 'dataloads'
+  module: 'datasets' | 'runtimes' | 'dataloads',
 ): TabConfig[] {
   const clusterName = cluster || 'host';
   const path = `/fluid/${clusterName}/${namespace}/${module}/${name}`;
-  
+
   return [
     {
       title: t('RESOURCE_STATUS'),

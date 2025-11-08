@@ -1,5 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Form, FormItem, Input, Select, Switch, InputNumber, Row, Col, Button, Alert } from '@kubed/components';
+import {
+  Form,
+  FormItem,
+  Input,
+  Select,
+  Switch,
+  InputNumber,
+  Row,
+  Col,
+  Button,
+  Alert,
+} from '@kubed/components';
 import { StepComponentProps } from '../types';
 import styled from 'styled-components';
 import { Add, Trash } from '@kubed/icons';
@@ -27,8 +38,8 @@ const StepDescription = styled.p`
 `;
 
 const ConfigSection = styled.div<{ disabled?: boolean }>`
-  opacity: ${props => props.disabled ? 0.5 : 1};
-  pointer-events: ${props => props.disabled ? 'none' : 'auto'};
+  opacity: ${props => (props.disabled ? 0.5 : 1)};
+  pointer-events: ${props => (props.disabled ? 'none' : 'auto')};
   transition: opacity 0.3s ease;
 `;
 
@@ -51,7 +62,7 @@ const RemoveButton = styled.button`
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
-  
+
   &:hover {
     background-color: #fff2f2;
   }
@@ -70,7 +81,7 @@ const AddTargetButton = styled.button`
   align-items: center;
   justify-content: center;
   gap: 8px;
-  
+
   &:hover {
     border-color: #3385ff;
     background-color: #f8faff;
@@ -92,11 +103,9 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
   formData,
   onDataChange,
   onValidationChange,
-  isIndependent = false
+  isIndependent = false,
 }) => {
-  const [targets, setTargets] = useState<Target[]>([
-    { path: '/', replicas: 1 },
-  ]);
+  const [targets, setTargets] = useState<Target[]>([{ path: '/', replicas: 1 }]);
   const [formValues, setFormValues] = useState({
     enableDataLoad: formData.enableDataLoad || false,
     loadMetadata: formData.dataLoadConfig?.loadMetadata || false,
@@ -107,7 +116,7 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
   });
   // const [namespaces, setNamespaces] = useState<string[]>([]);
   // const [datasetNamespaces, setDatasetNamespaces] = useState<string[]>([]);
-  const { namespaces, isLoading, error, refetchNamespaces} = useNamespaces('')
+  const { namespaces, isLoading, error, refetchNamespaces } = useNamespaces('');
   const [datasets, setDatasets] = useState<any[]>([]);
   // const [isLoadingNamespaces, setIsLoadingNamespaces] = useState(false);
   // const [isLoadingDatasetNamespaces, setIsLoadingDatasetNamespaces] = useState(false);
@@ -143,7 +152,7 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
     const dataLoadConfig = formData.dataLoadConfig;
 
     setFormValues({
-      enableDataLoad: isIndependent ? true : (formData.enableDataLoad || false), // 独立模式默认启用
+      enableDataLoad: isIndependent ? true : formData.enableDataLoad || false, // 独立模式默认启用
       loadMetadata: dataLoadConfig?.loadMetadata || false,
       policy: dataLoadConfig?.policy || 'Once',
       schedule: dataLoadConfig?.schedule || '',
@@ -173,13 +182,15 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
     // 只更新DataLoad基本配置，保留完整的dataLoadSpec
     onDataChange({
       enableDataLoad: valuesToUse.enableDataLoad,
-      dataLoadConfig: valuesToUse.enableDataLoad ? {
-        loadMetadata: valuesToUse.loadMetadata,
-        target: targetsToUse,
-        policy: valuesToUse.policy,
-        schedule: valuesToUse.policy === 'Cron' ? valuesToUse.schedule : undefined,
-        ttlSecondsAfterFinished: valuesToUse.ttlSecondsAfterFinished,
-      } : undefined,
+      dataLoadConfig: valuesToUse.enableDataLoad
+        ? {
+            loadMetadata: valuesToUse.loadMetadata,
+            target: targetsToUse,
+            policy: valuesToUse.policy,
+            schedule: valuesToUse.policy === 'Cron' ? valuesToUse.schedule : undefined,
+            ttlSecondsAfterFinished: valuesToUse.ttlSecondsAfterFinished,
+          }
+        : undefined,
       // 保留现有的dataLoadSpec配置
     });
 
@@ -188,7 +199,9 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
       // 独立模式：验证必填字段
       const hasDataLoadName = !!(formData.dataLoadName && formData.dataLoadName.trim() !== '');
       const hasNamespace = !!(formData.namespace && formData.namespace.trim() !== '');
-      const hasSelectedDataset = !!(formData.selectedDataset && formData.selectedDataset.trim() !== '');
+      const hasSelectedDataset = !!(
+        formData.selectedDataset && formData.selectedDataset.trim() !== ''
+      );
       const hasValidTarget = targetsToUse.some(target => target.path);
 
       const isValid = hasDataLoadName && hasNamespace && hasSelectedDataset && hasValidTarget;
@@ -252,11 +265,7 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
   return (
     <StepContainer>
       {!isIndependent ? (
-        <Alert
-          type="info"
-          title={t('DATA_PRELOAD_OPTIONAL')}
-          style={{ marginBottom: 24 }}
-        >
+        <Alert type="info" title={t('DATA_PRELOAD_OPTIONAL')} style={{ marginBottom: 24 }}>
           {t('DATA_PRELOAD_OPTIONAL_DESC')}
         </Alert>
       ) : (
@@ -293,11 +302,15 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
                 <Select
                   placeholder={t('SELECT_DATASET_NAMESPACE')}
                   value={formData.selectedDatasetNamespace}
-                  onChange={(value) => onDataChange({ selectedDatasetNamespace: value, selectedDataset: '' })}
+                  onChange={value =>
+                    onDataChange({ selectedDatasetNamespace: value, selectedDataset: '' })
+                  }
                   loading={isLoading}
                   showSearch
                   filterOption={(input, option) =>
-                    String(option?.children || '').toLowerCase().includes(input.toLowerCase())
+                    String(option?.children || '')
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
                   }
                   style={{ width: '100%' }}
                 >
@@ -317,12 +330,14 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
                 <Select
                   placeholder={t('SELECT_DATASET_PLACEHOLDER')}
                   value={formData.selectedDataset || ''}
-                  onChange={(value) => onDataChange({ selectedDataset: value })}
+                  onChange={value => onDataChange({ selectedDataset: value })}
                   loading={isLoadingDatasets}
                   disabled={!formData.selectedDatasetNamespace}
                   showSearch
                   filterOption={(input, option) =>
-                    String(option?.children || '').toLowerCase().includes(input.toLowerCase())
+                    String(option?.children || '')
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
                   }
                   style={{ width: '100%' }}
                 >
@@ -345,7 +360,7 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
           </label>
           <Switch
             checked={formValues.enableDataLoad}
-            onChange={(checked) => handleFormChange('enableDataLoad', checked)}
+            onChange={checked => handleFormChange('enableDataLoad', checked)}
           />
         </div>
       )}
@@ -360,11 +375,11 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
                 </label>
                 <Switch
                   checked={formValues.loadMetadata}
-                  onChange={(checked) => handleFormChange('loadMetadata', checked)}
+                  onChange={checked => handleFormChange('loadMetadata', checked)}
                 />
               </div>
             </Col>
-            <Col span={3} >
+            <Col span={3}>
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
                   {t('PRELOAD_POLICY')}
@@ -372,7 +387,7 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
                 <Select
                   placeholder={t('SELECT_POLICY')}
                   value={formValues.policy}
-                  onChange={(value) => handleFormChange('policy', value)}
+                  onChange={value => handleFormChange('policy', value)}
                 >
                   {POLICY_OPTIONS.map(option => (
                     <Select.Option key={option.value} value={option.value}>
@@ -390,7 +405,7 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
                 <InputNumber
                   // placeholder={t('TTL_SECONDS_PLACEHOLDER')}
                   value={formValues.ttlSecondsAfterFinished}
-                  onChange={(value) => handleFormChange('ttlSecondsAfterFinished', value)}
+                  onChange={value => handleFormChange('ttlSecondsAfterFinished', value)}
                   min={0}
                   style={{ width: '100%' }}
                 />
@@ -406,7 +421,9 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
               <Input
                 placeholder="0 2 * * *"
                 value={formValues.schedule}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFormChange('schedule', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  handleFormChange('schedule', e.target.value)
+                }
               />
               <div style={{ fontSize: '12px', color: '#79879c', marginTop: '4px' }}>
                 {t('CRON_SCHEDULE_HELP')}
@@ -434,7 +451,9 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
                       </label>
                       <Input
                         value={target.path}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateTarget(index, 'path', e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          updateTarget(index, 'path', e.target.value)
+                        }
                         placeholder={t('TARGET_PATH_PLACEHOLDER')}
                       />
                     </div>
@@ -446,7 +465,7 @@ const DataLoadStep: React.FC<StepComponentProps> = ({
                       </label>
                       <InputNumber
                         value={target.replicas}
-                        onChange={(value) => updateTarget(index, 'replicas', value || 1)}
+                        onChange={value => updateTarget(index, 'replicas', value || 1)}
                         min={1}
                         max={100}
                         style={{ width: '100%' }}

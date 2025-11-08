@@ -23,7 +23,7 @@ export const useNamespaces = (currentCluster: string): UseNamespacesResult => {
       if (!response.ok) {
         throw new Error(`${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
       if (data && data.items) {
         const namespaceNames = data.items.map((item: any) => item.metadata.name);

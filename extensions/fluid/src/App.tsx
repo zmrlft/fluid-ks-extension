@@ -6,7 +6,6 @@ import styled from 'styled-components';
 import ClusterSelector from './components/ClusterSelector';
 import fluidicon from './assets/fluidiconStr';
 
-
 declare const t: (key: string, options?: any) => string;
 
 // 由于 Layout 不在 @kubed/components 中，我们自己创建一个简单的 Layout
@@ -58,19 +57,19 @@ const StyledMenu = styled.div`
     margin: 4px 0;
     cursor: pointer;
     transition: all 0.3s ease;
-    
+
     .menu-icon {
       margin-right: 10px;
     }
-    
+
     &:hover {
       background-color: #f5f7fa;
     }
-    
+
     &.selected {
       background-color: #f9fbfd;
       border-right: 3px solid #00aa72;
-      
+
       .menu-icon {
         color: #00aa72;
       }
@@ -86,18 +85,18 @@ const menuItems = [
   {
     key: 'datasets',
     icon: <Book2Duotone />,
-    label: 'DATASETS'
+    label: 'DATASETS',
   },
   {
     key: 'runtimes',
     icon: <RocketDuotone />,
-    label: 'RUNTIMES'
+    label: 'RUNTIMES',
   },
   {
     key: 'dataloads',
-    icon: <DownloadDuotone/>,
-    label: 'DATALOADS'
-  }
+    icon: <DownloadDuotone />,
+    label: 'DATALOADS',
+  },
 ];
 
 export default function App() {
@@ -107,7 +106,7 @@ export default function App() {
 
   // 从URL参数获取当前集群
   const currentCluster = params.cluster || 'host';
-  
+
   const selectedKeys = useMemo(() => {
     if (location.pathname.includes('/datasets')) {
       return 'datasets';
@@ -130,11 +129,15 @@ export default function App() {
     <FluidLayout>
       <Sider>
         <LogoWrapper>
-          <img src={`data:image/svg+xml;utf8,${encodeURIComponent(fluidicon)}`} alt="Fluid Logo" style={{ width: '120px', height: '40px' }} />
+          <img
+            src={`data:image/svg+xml;utf8,${encodeURIComponent(fluidicon)}`}
+            alt="Fluid Logo"
+            style={{ width: '120px', height: '40px' }}
+          />
         </LogoWrapper>
         <ClusterSelector />
         <StyledMenu>
-          {menuItems.map((item) => (
+          {menuItems.map(item => (
             <div
               key={item.key}
               className={`menu-item ${selectedKeys === item.key ? 'selected' : ''}`}
@@ -148,7 +151,6 @@ export default function App() {
       </Sider>
       <Content>
         <ContentWrapper>
-          
           <Outlet />
         </ContentWrapper>
       </Content>

@@ -5,7 +5,14 @@
 import React, { useState, useEffect } from 'react';
 import { StatusIndicator, useCacheStore as useStore } from '@ks-console/shared';
 import { Card } from '@kubed/components';
-import { Book2Duotone, RocketDuotone, StorageDuotone, AppstoreDuotone, FolderDuotone, DatabaseSealDuotone } from '@kubed/icons';
+import {
+  Book2Duotone,
+  RocketDuotone,
+  StorageDuotone,
+  AppstoreDuotone,
+  FolderDuotone,
+  DatabaseSealDuotone,
+} from '@kubed/icons';
 import { get } from 'lodash';
 import styled from 'styled-components';
 import { SimpleCircle } from '@ks-console/shared';
@@ -15,7 +22,7 @@ import {
   InfoGrid,
   InfoItem,
   InfoLabel,
-  InfoValue
+  InfoValue,
 } from '../../../shared/components/ResourceStatusStyles';
 import { getStatusIndicatorType } from '../../../../utils/getStatusIndicatorType';
 
@@ -40,8 +47,6 @@ interface Runtime {
   category?: string;
   masterReplicas?: number;
 }
-
-
 
 const TopologyContainer = styled.div`
   display: flex;
@@ -71,7 +76,9 @@ const TopologyNode = styled.div<{ clickable?: boolean }>`
   min-width: 100px;
   transition: all 0.2s ease;
 
-  ${props => props.clickable && `
+  ${props =>
+    props.clickable &&
+    `
     cursor: pointer;
 
     &:hover {
@@ -150,7 +157,7 @@ const MountDetails = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
-  
+
   @media (max-width: 576px) {
     grid-template-columns: 1fr;
   }
@@ -194,16 +201,16 @@ const ResourceStatus = () => {
   // 将不同数据单位统一转换为 GiB
   const convertUnit = (value: string): number => {
     if (!value || value === '-') return 0;
-    
+
     // 提取数字部分和单位部分
     const regex = /^([\d.]+)\s*([A-Za-z]+)$/;
     const match = value.match(regex);
-    
+
     if (!match) return parseFloat(value) || 0;
-    
+
     const num = parseFloat(match[1]);
     const unit = match[2].toLowerCase();
-    
+
     // 转换为 GiB
     switch (unit) {
       case 'b':
@@ -296,7 +303,14 @@ const ResourceStatus = () => {
     const currentCluster = getCurrentCluster();
     const namespace = get(detail, 'metadata.namespace');
     const url = `/fluid/${currentCluster}/${namespace}/runtimes/${runtime.name}/resource-status`;
-    console.log('Opening runtime in new window:', runtime.name, 'in namespace:', namespace, 'cluster:', currentCluster);
+    console.log(
+      'Opening runtime in new window:',
+      runtime.name,
+      'in namespace:',
+      namespace,
+      'cluster:',
+      currentCluster,
+    );
     window.open(url, '_blank');
   };
 
@@ -318,7 +332,14 @@ const ResourceStatus = () => {
     const datasetName = get(detail, 'metadata.name');
     // 根据提供的路径格式: /clusters/host/projects/{namespace}/volumes/{pvcName}/resource-status
     const url = `/clusters/${currentCluster}/projects/${namespace}/volumes/${datasetName}/resource-status`;
-    console.log('Opening PVC in new window:', datasetName, 'in namespace:', namespace,'cluster:', currentCluster);
+    console.log(
+      'Opening PVC in new window:',
+      datasetName,
+      'in namespace:',
+      namespace,
+      'cluster:',
+      currentCluster,
+    );
     window.open(url, '_blank');
   };
 
@@ -329,7 +350,7 @@ const ResourceStatus = () => {
     const runtimes = get(detail, 'status.runtimes', []) as Runtime[];
     const mounts = get(detail, 'spec.mounts', []) as Mount[];
     const volumeName = `${namespace}-${datasetName}`;
-    console.log("detail",detail)
+    console.log('detail', detail);
 
     return (
       <TopologyContainer>
@@ -491,12 +512,11 @@ const ResourceStatus = () => {
             <InfoItem>
               <InfoLabel>{t('STATUS')}</InfoLabel>
               <StatusIndicator
-                    type={getStatusIndicatorType(get(detail, 'status.phase', '-'))}
-                    motion={false}
+                type={getStatusIndicatorType(get(detail, 'status.phase', '-'))}
+                motion={false}
               >
-                  <InfoValue>{get(detail, 'status.phase', '-')}</InfoValue>
+                <InfoValue>{get(detail, 'status.phase', '-')}</InfoValue>
               </StatusIndicator>
-              
             </InfoItem>
             <InfoItem>
               <InfoLabel>{t('TOTAL_FILES')}</InfoLabel>
@@ -509,7 +529,7 @@ const ResourceStatus = () => {
           </InfoGrid>
         </Card>
       </CardWrapper>
-      
+
       {/* 缓存状态卡片 */}
       <CardWrapper>
         <Card sectionTitle={t('CACHE_STATUS')}>
@@ -523,7 +543,7 @@ const ResourceStatus = () => {
                 value={convertUnit(get(detail, 'status.cacheStates.cached', '-'))}
                 total={convertUnit(get(detail, 'status.cacheStates.cacheCapacity', '-'))}
                 showRate
-                unit='GiB'
+                unit="GiB"
               />
             </InfoItem>
             <InfoItem>
@@ -541,7 +561,7 @@ const ResourceStatus = () => {
                 })()}
                 total={100}
                 showRate
-                unit='%'
+                unit="%"
               />
             </InfoItem>
             <InfoItem>
@@ -553,20 +573,18 @@ const ResourceStatus = () => {
                 value={convertUnit(get(detail, 'status.cacheStates.cached', '-'))}
                 total={convertUnit(get(detail, 'status.ufsTotal', '-'))}
                 showRate
-                unit='GiB'
+                unit="GiB"
               />
             </InfoItem>
           </InfoGrid>
         </Card>
       </CardWrapper>
-      
+
       {/* 数据集拓扑图卡片 */}
       <CardWrapper>
-        <Card sectionTitle={t('DATASET_TOPOLOGY')}>
-          {renderTopologyGraph()}
-        </Card>
+        <Card sectionTitle={t('DATASET_TOPOLOGY')}>{renderTopologyGraph()}</Card>
       </CardWrapper>
-      
+
       {/* 挂载信息卡片 */}
       {detail?.spec?.mounts && detail.spec.mounts.length > 0 && (
         <CardWrapper>
@@ -603,4 +621,4 @@ const ResourceStatus = () => {
   );
 };
 
-export default ResourceStatus; 
+export default ResourceStatus;

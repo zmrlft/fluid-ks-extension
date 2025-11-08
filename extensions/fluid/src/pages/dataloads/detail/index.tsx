@@ -56,7 +56,11 @@ interface DataLoad {
 
 const DataLoadDetail: React.FC = () => {
   const module = 'dataloads';
-  const { cluster, namespace, name } = useParams<{ cluster: string; namespace: string; name: string }>();
+  const { cluster, namespace, name } = useParams<{
+    cluster: string;
+    namespace: string;
+    name: string;
+  }>();
   const navigate = useNavigate();
   const [dataload, setDataload] = useState<DataLoad | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -85,10 +89,12 @@ const DataLoadDetail: React.FC = () => {
   // 获取数据加载任务详情
   useEffect(() => {
     const fetchDataLoadDetail = async () => {
-      console.log("fetchDataLoadDetail被调用了")
+      console.log('fetchDataLoadDetail被调用了');
       try {
         setLoading(true);
-        const response = await request(`/apis/data.fluid.io/v1alpha1/namespaces/${namespace}/dataloads/${name}`);
+        const response = await request(
+          `/apis/data.fluid.io/v1alpha1/namespaces/${namespace}/dataloads/${name}`,
+        );
         if (!response.ok) {
           throw new Error(`Failed to fetch dataload: ${response.statusText}`);
         }
@@ -110,11 +116,11 @@ const DataLoadDetail: React.FC = () => {
 
   // 更新全局状态
   useEffect(() => {
-    setDetailProps({ 
-      module, 
-      detail: dataload as any, 
-      isLoading: loading, 
-      isError: error 
+    setDetailProps({
+      module,
+      detail: dataload as any,
+      isLoading: loading,
+      isError: error,
     });
   }, [dataload, loading, error]);
 
@@ -144,7 +150,7 @@ const DataLoadDetail: React.FC = () => {
       namespace: dataload.metadata.namespace,
       onSuccess: () => {
         navigate(listUrl);
-      }
+      },
     });
   };
 
@@ -159,11 +165,10 @@ const DataLoadDetail: React.FC = () => {
       key: 'delete',
       text: t('DELETE'),
       render: () => (
-        <Button color='error'
-            onClick={handleDelete}>
-              {t('DELETE')}
+        <Button color="error" onClick={handleDelete}>
+          {t('DELETE')}
         </Button>
-      )
+      ),
     },
   ];
 
@@ -224,7 +229,7 @@ const DataLoadDetail: React.FC = () => {
               label: t('DATALOADS'),
               url: listUrl,
             },
-            icon: <DownloadDuotone size={24}/>
+            icon: <DownloadDuotone size={24} />,
           }}
         />
       )}

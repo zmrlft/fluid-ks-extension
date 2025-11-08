@@ -22,7 +22,7 @@ import {
   StatusGrid,
   StatusItem,
   StatusValue,
-  StatusLabel
+  StatusLabel,
 } from '../../../shared/components/ResourceStatusStyles';
 import { getStatusIndicatorType } from '../../../../utils/getStatusIndicatorType';
 
@@ -59,7 +59,14 @@ const ResourceStatus = () => {
     const runtimeName = get(detail, 'metadata.name', '');
     const masterName = generateStatefulSetName(runtimeName, runtimeType?.kind || '', 'master');
     const url = `/clusters/${cluster}/projects/${namespace}/statefulsets/${masterName}/resource-status`;
-    console.log('Opening master in new window:', masterName, 'in namespace:', namespace, 'cluster:', cluster);
+    console.log(
+      'Opening master in new window:',
+      masterName,
+      'in namespace:',
+      namespace,
+      'cluster:',
+      cluster,
+    );
     window.open(url, '_blank');
   };
 
@@ -70,7 +77,14 @@ const ResourceStatus = () => {
     const runtimeName = get(detail, 'metadata.name', '');
     const workerName = generateStatefulSetName(runtimeName, runtimeType?.kind || '', 'worker');
     const url = `/clusters/${cluster}/projects/${namespace}/statefulsets/${workerName}/resource-status`;
-    console.log('Opening worker in new window:', workerName, 'in namespace:', namespace, 'cluster:', cluster);
+    console.log(
+      'Opening worker in new window:',
+      workerName,
+      'in namespace:',
+      namespace,
+      'cluster:',
+      cluster,
+    );
     window.open(url, '_blank');
   };
 
@@ -83,10 +97,7 @@ const ResourceStatus = () => {
             <InfoItem>
               <InfoLabel>{t('STATUS')}</InfoLabel>
               <InfoValue>
-                <StatusIndicator
-                    type={getStatusIndicatorType(getOverallStatus())}
-                    motion={false}
-                >
+                <StatusIndicator type={getStatusIndicatorType(getOverallStatus())} motion={false}>
                   {getOverallStatus()}
                 </StatusIndicator>
               </InfoValue>
@@ -105,11 +116,15 @@ const ResourceStatus = () => {
             </InfoItem>
             <InfoItem>
               <InfoLabel>Worker {t('REPLICAS')}</InfoLabel>
-              <InfoValue>{get(detail, 'spec.replicas', get(detail, 'spec.worker.replicas', '-'))}</InfoValue>
+              <InfoValue>
+                {get(detail, 'spec.replicas', get(detail, 'spec.worker.replicas', '-'))}
+              </InfoValue>
             </InfoItem>
             <InfoItem>
               <InfoLabel>{t('PROMETHEUS_MONITORING')}</InfoLabel>
-              <InfoValue>{get(detail, 'spec.disablePrometheus', false) ? t('DISABLED') : t('ENABLED')}</InfoValue>
+              <InfoValue>
+                {get(detail, 'spec.disablePrometheus', false) ? t('DISABLED') : t('ENABLED')}
+              </InfoValue>
             </InfoItem>
           </InfoGrid>
         </Card>
@@ -138,9 +153,7 @@ const ResourceStatus = () => {
                 <StatusLabel>{t('PHASE')}</StatusLabel>
               </StatusItem>
               <StatusItem>
-                <StatusValue>
-                    {get(detail, 'status.masterNumberReady', '0')}
-                </StatusValue>
+                <StatusValue>{get(detail, 'status.masterNumberReady', '0')}</StatusValue>
                 <StatusLabel>{t('READY')}</StatusLabel>
               </StatusItem>
               <StatusItem>
@@ -163,7 +176,9 @@ const ResourceStatus = () => {
       )}
 
       {/* Worker 状态卡片 - 可点击跳转 */}
-      {(get(detail, 'spec.worker') || get(detail, 'status.workerPhase') || get(detail, 'spec.replicas')) && (
+      {(get(detail, 'spec.worker') ||
+        get(detail, 'status.workerPhase') ||
+        get(detail, 'spec.replicas')) && (
         <CardWrapper>
           <StatusCard style={{ cursor: 'pointer' }} onClick={handleWorkerClick}>
             <StatusHeader>
@@ -185,13 +200,13 @@ const ResourceStatus = () => {
                 <StatusLabel>{t('PHASE')}</StatusLabel>
               </StatusItem>
               <StatusItem>
-                <StatusValue>{get(detail, 'spec.replicas', get(detail, 'spec.worker.replicas', '0'))}</StatusValue>
+                <StatusValue>
+                  {get(detail, 'spec.replicas', get(detail, 'spec.worker.replicas', '0'))}
+                </StatusValue>
                 <StatusLabel>{t('REPLICAS')}</StatusLabel>
               </StatusItem>
               <StatusItem>
-                <StatusValue>
-                    {get(detail, 'status.workerNumberReady', '0')}
-                </StatusValue>
+                <StatusValue>{get(detail, 'status.workerNumberReady', '0')}</StatusValue>
                 <StatusLabel>{t('READY')}</StatusLabel>
               </StatusItem>
               <StatusItem>
@@ -227,7 +242,9 @@ const ResourceStatus = () => {
               <StatusIcon>
                 <AppstoreDuotone size={16} />
               </StatusIcon>
-              <StatusTitle>{runtimeType?.kind === 'VineyardRuntime' ? t('CLIENT_SOCKET') : 'Fuse'}</StatusTitle>
+              <StatusTitle>
+                {runtimeType?.kind === 'VineyardRuntime' ? t('CLIENT_SOCKET') : 'Fuse'}
+              </StatusTitle>
             </StatusHeader>
             <StatusGrid>
               <StatusItem>
@@ -242,9 +259,7 @@ const ResourceStatus = () => {
                 <StatusLabel>{t('PHASE')}</StatusLabel>
               </StatusItem>
               <StatusItem>
-                <StatusValue>
-                    {get(detail, 'status.fuseNumberReady', '0')}
-                </StatusValue>
+                <StatusValue>{get(detail, 'status.fuseNumberReady', '0')}</StatusValue>
                 <StatusLabel>{t('READY')}</StatusLabel>
               </StatusItem>
               <StatusItem>
@@ -286,7 +301,9 @@ const ResourceStatus = () => {
               {get(detail, 'spec.tieredstore.levels', []).map((level: any, index: number) => (
                 <React.Fragment key={index}>
                   <InfoItem>
-                    <InfoLabel>{t('LEVEL')} {level.level || index}</InfoLabel>
+                    <InfoLabel>
+                      {t('LEVEL')} {level.level || index}
+                    </InfoLabel>
                     <InfoValue>-</InfoValue>
                   </InfoItem>
                   <InfoItem>
@@ -320,7 +337,13 @@ const ResourceStatus = () => {
                     </InfoItem>
                   )}
                   {index < get(detail, 'spec.tieredstore.levels', []).length - 1 && (
-                    <InfoItem style={{ gridColumn: '1 / -1', borderBottom: '1px solid #e3e9ef', margin: '8px 0' }}>
+                    <InfoItem
+                      style={{
+                        gridColumn: '1 / -1',
+                        borderBottom: '1px solid #e3e9ef',
+                        margin: '8px 0',
+                      }}
+                    >
                       <InfoValue></InfoValue>
                     </InfoItem>
                   )}
@@ -336,28 +359,32 @@ const ResourceStatus = () => {
         <CardWrapper>
           <Card sectionTitle={t('CACHE_STATUS')}>
             <InfoGrid>
-              {Object.entries(get(detail, 'status.cacheStates', {})).map(([key, value]: [string, any]) => {
-                // 缓存状态字段名映射
-                const getCacheStateLabel = (fieldName: string) => {
-                  const labelMap: Record<string, string> = {
-                    'cached': t('CACHED'),
-                    'cacheCapacity': t('CACHE_CAPACITY'),
-                    'cacheHitRatio': t('CACHE_HIT_RATIO'),
-                    'cachePercentage': t('CACHE_PERCENTAGE'),
-                    'ufsTotal': t('UFS_TOTAL'),
-                    'totalFiles': t('TOTAL_FILES'),
-                    'cacheThroughputRatio': t('cacheThroughputRatio'),
+              {Object.entries(get(detail, 'status.cacheStates', {})).map(
+                ([key, value]: [string, any]) => {
+                  // 缓存状态字段名映射
+                  const getCacheStateLabel = (fieldName: string) => {
+                    const labelMap: Record<string, string> = {
+                      cached: t('CACHED'),
+                      cacheCapacity: t('CACHE_CAPACITY'),
+                      cacheHitRatio: t('CACHE_HIT_RATIO'),
+                      cachePercentage: t('CACHE_PERCENTAGE'),
+                      ufsTotal: t('UFS_TOTAL'),
+                      totalFiles: t('TOTAL_FILES'),
+                      cacheThroughputRatio: t('cacheThroughputRatio'),
+                    };
+                    return labelMap[fieldName] || fieldName;
                   };
-                  return labelMap[fieldName] || fieldName;
-                };
 
-                return (
-                  <InfoItem key={key}>
-                    <InfoLabel>{getCacheStateLabel(key)}</InfoLabel>
-                    <InfoValue>{typeof value === 'object' ? JSON.stringify(value) : String(value)}</InfoValue>
-                  </InfoItem>
-                );
-              })}
+                  return (
+                    <InfoItem key={key}>
+                      <InfoLabel>{getCacheStateLabel(key)}</InfoLabel>
+                      <InfoValue>
+                        {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                      </InfoValue>
+                    </InfoItem>
+                  );
+                },
+              )}
             </InfoGrid>
           </Card>
         </CardWrapper>

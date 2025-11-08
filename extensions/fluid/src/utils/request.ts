@@ -65,11 +65,11 @@ export const request = async (path: string, options?: RequestInit): Promise<Resp
  */
 export const requestJson = async (path: string, options?: RequestInit): Promise<any> => {
   const response = await request(path, options);
-  
+
   if (!response.ok) {
     throw new Error(`API request failed: ${response.status} ${response.statusText}`);
   }
-  
+
   return response.json();
 };
 
@@ -93,7 +93,11 @@ export const getWebSocketUrl = (path: string): string => {
  * @param options 额外的fetch选项
  * @returns Promise<any>
  */
-export const requestPatch = async (path: string, data: any, options?: RequestInit): Promise<any> => {
+export const requestPatch = async (
+  path: string,
+  data: any,
+  options?: RequestInit,
+): Promise<any> => {
   const response = await request(path, {
     method: 'PATCH',
     headers: {

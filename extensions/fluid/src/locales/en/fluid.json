@@ -60,7 +60,7 @@
   "NO_DATASET_FOUND": "No Dataset Found",
   "NO_DATASET_FOUND_DESC": "There are no datasets matching your criteria. You can try creating a new dataset.",
   "SEARCH": "Search",
-  
+
   "RUNTIMES": "Runtimes",
   "RUNTIME": "Runtime",
   "RUNTIME_LIST": "Runtime List",
@@ -221,7 +221,6 @@
   "CLIENT_SOCKET": "Client Socket",
   "CLICK_TO_VIEW_DETAILS": "Click to view details",
 
-  
   "cacheThroughputRatio": "Cache Throughput Ratio",
   "cachedPercentage": "Cached Percentage",
   "localHitRatio": "Local Hit Ratio",
@@ -230,7 +229,6 @@
   "remoteThroughputRatio": "Remote Throughput Ratio",
 
   "VOLUME_TYPE": "Volume Type",
-
 
   "SCALE": "Scale",
   "SCALE_RUNTIME_REPLICAS": "Scale Runtime Replicas",

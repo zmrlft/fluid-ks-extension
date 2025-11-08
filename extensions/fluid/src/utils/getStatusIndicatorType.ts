@@ -1,5 +1,7 @@
 // 获取状态指示器类型函数
-export const getStatusIndicatorType = (phase: string): 'success' | 'warning' | 'error' | 'default' => {
+export const getStatusIndicatorType = (
+  phase: string,
+): 'success' | 'warning' | 'error' | 'default' => {
   switch (phase?.toLowerCase()) {
     case 'ready':
     case 'running':

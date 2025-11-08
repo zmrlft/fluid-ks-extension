@@ -24,7 +24,7 @@ export const RemoveButton = styled.button`
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
-  
+
   &:hover {
     background-color: #fff2f2;
   }
@@ -43,7 +43,7 @@ export const AddMountButton = styled.button`
   align-items: center;
   justify-content: center;
   gap: 8px;
-  
+
   &:hover {
     border-color: #3385ff;
     background-color: #f8faff;

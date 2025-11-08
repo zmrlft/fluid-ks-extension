@@ -87,9 +87,7 @@ export interface EncryptOptionsInputProps {
 }
 
 // 验证函数
-export const validateEncryptOptions = (
-  options: EncryptOption[]
-): EncryptValidationResult => {
+export const validateEncryptOptions = (options: EncryptOption[]): EncryptValidationResult => {
   const errorIndexes: number[] = [];
   const nameMap = new Map<string, number[]>();
 
@@ -118,7 +116,7 @@ export const validateEncryptOptions = (
   });
 
   // 检查重复的name
-  nameMap.forEach((indexes) => {
+  nameMap.forEach(indexes => {
     if (indexes.length > 1) {
       errorIndexes.push(...indexes);
     }
@@ -128,7 +126,7 @@ export const validateEncryptOptions = (
     return {
       valid: false,
       message: t('ENCRYPT_OPTIONS_VALIDATION_ERROR'),
-      errorIndexes
+      errorIndexes,
     };
   }
 
@@ -155,15 +153,18 @@ const EncryptOptionsInput: React.FC<EncryptOptionsInputProps> = ({
 
   // 添加新项
   function addItem() {
-    const newValue = [...value, {
-      name: '',
-      valueFrom: {
-        secretKeyRef: {
-          name: '',
-          key: ''
-        }
-      }
-    }];
+    const newValue = [
+      ...value,
+      {
+        name: '',
+        valueFrom: {
+          secretKeyRef: {
+            name: '',
+            key: '',
+          },
+        },
+      },
+    ];
     onChange(newValue);
     validateData(newValue);
   }
@@ -231,11 +232,7 @@ const EncryptOptionsInput: React.FC<EncryptOptionsInputProps> = ({
                 status={hasError ? 'error' : undefined}
               />
             </EncryptInputWrapper>
-            <DeleteButton
-              type="button"
-              onClick={() => removeItem(index)}
-              title={t('REMOVE_LABEL')}
-            >
+            <DeleteButton type="button" onClick={() => removeItem(index)} title={t('REMOVE_LABEL')}>
               <Trash size={16} />
             </DeleteButton>
           </EncryptItem>
@@ -250,10 +247,7 @@ const EncryptOptionsInput: React.FC<EncryptOptionsInputProps> = ({
         </ValidationError>
       )}
 
-      <AddButton
-        type="button"
-        onClick={addItem}
-      >
+      <AddButton type="button" onClick={addItem}>
         <Add size={16} style={{ marginRight: '4px' }} />
         {t('ADD_ENCRYPT_OPTION')}
       </AddButton>

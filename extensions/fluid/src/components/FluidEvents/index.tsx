@@ -24,9 +24,11 @@ const getRuntimePhase = (item: any) => {
     return 'Terminating';
   }
   // 运行时的状态优先级：master > worker > fuse
-  return get(item, 'status.masterPhase', 
-    get(item, 'status.workerPhase', 
-      get(item, 'status.fusePhase', 'Unknown')));
+  return get(
+    item,
+    'status.masterPhase',
+    get(item, 'status.workerPhase', get(item, 'status.fusePhase', 'Unknown')),
+  );
 };
 
 // DataLoad状态判断
@@ -67,7 +69,7 @@ const FluidEvents: React.FC<FluidEventsProps> = ({
   detail: rawDetail,
   module,
   resourceType,
-  loadingText = 'Loading details...'
+  loadingText = 'Loading details...',
 }) => {
   console.log(`FluidEvents[${resourceType}] - 原始detail:`, rawDetail);
   console.log(`FluidEvents[${resourceType}] - module:`, module);
@@ -97,9 +99,11 @@ const FluidEvents: React.FC<FluidEventsProps> = ({
 
     // 其他辅助字段
     creationTime: get(rawDetail, 'metadata.creationTimestamp'),
-    kind: get(rawDetail, 'kind',
-      resourceType === 'dataset' ? 'Dataset' :
-      resourceType === 'runtime' ? 'Runtime' : 'DataLoad'),
+    kind: get(
+      rawDetail,
+      'kind',
+      resourceType === 'dataset' ? 'Dataset' : resourceType === 'runtime' ? 'Runtime' : 'DataLoad',
+    ),
     apiVersion: get(rawDetail, 'apiVersion', 'data.fluid.io/v1alpha1'),
 
     // 保持原有的metadata结构以防某些组件依赖
@@ -108,9 +112,7 @@ const FluidEvents: React.FC<FluidEventsProps> = ({
 
   console.log(`FluidEvents[${resourceType}] - 规范化后的detail:`, normalizedDetail);
 
-  return (
-    <Events detail={normalizedDetail} module={module} />
-  );
+  return <Events detail={normalizedDetail} module={module} />;
 };
 
 export default FluidEvents;

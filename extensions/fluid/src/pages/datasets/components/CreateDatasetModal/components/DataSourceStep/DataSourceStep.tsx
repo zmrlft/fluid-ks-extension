@@ -4,8 +4,11 @@ import { MountItem } from './components/MountItem';
 import { AddMountButton } from './components/AddMountButton';
 import { StepContainer } from './styles';
 import { Mount } from './types';
-import { initializeMountsFromFormData, convertMountsForSubmission, generateMountName } from './utils';
-
+import {
+  initializeMountsFromFormData,
+  convertMountsForSubmission,
+  generateMountName,
+} from './utils';
 
 const DataSourceStep: React.FC<StepComponentProps> = ({
   formData,
@@ -13,7 +16,7 @@ const DataSourceStep: React.FC<StepComponentProps> = ({
   onValidationChange,
 }) => {
   const [mounts, setMounts] = useState<Mount[]>(() =>
-    initializeMountsFromFormData(formData.mounts)
+    initializeMountsFromFormData(formData.mounts),
   );
 
   // 验证挂载点是否填了
@@ -60,8 +63,6 @@ const DataSourceStep: React.FC<StepComponentProps> = ({
       updateFormData(newMounts);
     }
   };
-
-
 
   return (
     <StepContainer>

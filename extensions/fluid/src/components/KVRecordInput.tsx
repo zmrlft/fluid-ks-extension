@@ -3,7 +3,6 @@ import { Input, Button } from '@kubed/components';
 import { Trash, Add } from '@kubed/icons';
 import styled from 'styled-components';
 
-
 declare const t: (key: string, options?: any) => string;
 
 // 键值对输入组件样式
@@ -96,13 +95,9 @@ export const validateKVPairs = (
     allowDuplicateKeys?: boolean;
     allowEmptyKeys?: boolean;
     allowEmptyValues?: boolean;
-  } = {}
+  } = {},
 ): KVValidationResult => {
-  const {
-    allowDuplicateKeys = false,
-    allowEmptyKeys = false,
-    allowEmptyValues = true
-  } = options;
+  const { allowDuplicateKeys = false, allowEmptyKeys = false, allowEmptyValues = true } = options;
 
   // 检查重复键
   if (!allowDuplicateKeys) {
@@ -119,7 +114,7 @@ export const validateKVPairs = (
       }
     });
 
-    keyMap.forEach((indexes) => {
+    keyMap.forEach(indexes => {
       if (indexes.length > 1) {
         duplicateIndexes.push(...indexes);
       }
@@ -129,7 +124,7 @@ export const validateKVPairs = (
       return {
         valid: false,
         message: t('DUPLICATE_KEYS'),
-        duplicateIndexes
+        duplicateIndexes,
       };
     }
   }
@@ -147,7 +142,7 @@ export const validateKVPairs = (
       return {
         valid: false,
         message: t('EMPTY_KEY'),
-        duplicateIndexes: emptyKeyIndexes
+        duplicateIndexes: emptyKeyIndexes,
       };
     }
   }
@@ -165,7 +160,7 @@ export const validateKVPairs = (
       return {
         valid: false,
         message: t('EMPTY_VALUE'),
-        duplicateIndexes: emptyValueIndexes
+        duplicateIndexes: emptyValueIndexes,
       };
     }
   }
@@ -180,23 +175,26 @@ const KVRecordInput: React.FC<KVRecordInputProps> = ({
   onError,
   keyPlaceholder = t('KEY'),
   valuePlaceholder = t('VALUE'),
-  addButtonText = t('ADD_LABEL')
+  addButtonText = t('ADD_LABEL'),
 }) => {
   const [validationError, setValidationError] = useState<KVValidationResult | null>(null);
 
   // 验证数据
-  const validateData = useCallback((data: Array<{ key: string; value: string }>) => {
-    if (validator) {
-      const result = validator(data);
-      setValidationError(result.valid ? null : result);
-      if (onError) {
-        onError(result);
+  const validateData = useCallback(
+    (data: Array<{ key: string; value: string }>) => {
+      if (validator) {
+        const result = validator(data);
+        setValidationError(result.valid ? null : result);
+        if (onError) {
+          onError(result);
+        }
+        return result;
       }
-      return result;
-    }
-    setValidationError(null);
-    return { valid: true };
-  }, [validator, onError]);
+      setValidationError(null);
+      return { valid: true };
+    },
+    [validator, onError],
+  );
 
   // 添加新项
   const addItem = useCallback(() => {
@@ -206,19 +204,25 @@ const KVRecordInput: React.FC<KVRecordInputProps> = ({
   }, [value, onChange, validateData]);
 
   // 删除项
-  const removeItem = useCallback((index: number) => {
-    const newValue = value.filter((_, i) => i !== index);
-    onChange(newValue);
-    validateData(newValue);
-  }, [value, onChange, validateData]);
+  const removeItem = useCallback(
+    (index: number) => {
+      const newValue = value.filter((_, i) => i !== index);
+      onChange(newValue);
+      validateData(newValue);
+    },
+    [value, onChange, validateData],
+  );
 
   // 更新项
-  const updateItem = useCallback((index: number, field: 'key' | 'value', newValue: string) => {
-    const updatedValue = [...value];
-    updatedValue[index][field] = newValue;
-    onChange(updatedValue);
-    validateData(updatedValue);
-  }, [value, onChange, validateData]);
+  const updateItem = useCallback(
+    (index: number, field: 'key' | 'value', newValue: string) => {
+      const updatedValue = [...value];
+      updatedValue[index][field] = newValue;
+      onChange(updatedValue);
+      validateData(updatedValue);
+    },
+    [value, onChange, validateData],
+  );
 
   return (
     <KVContainer>
@@ -263,14 +267,10 @@ const KVRecordInput: React.FC<KVRecordInputProps> = ({
         </ValidationError>
       )}
 
-      <AddButton
-        type="button"
-        onClick={addItem}
-      >
+      <AddButton type="button" onClick={addItem}>
         {addButtonText}
       </AddButton>
     </KVContainer>
-    
   );
 };
 

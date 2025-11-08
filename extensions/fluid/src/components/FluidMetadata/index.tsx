@@ -28,40 +28,40 @@ interface FluidMetadataProps {
 
 const FluidMetadata: React.FC<FluidMetadataProps> = ({
   storeKey,
-  loadingText = 'Loading details...'
+  loadingText = 'Loading details...',
 }) => {
   const [props] = useStore(storeKey);
   const { detail, isLoading } = props;
-  
+
   if (isLoading) {
     return <Loading className="page-loading" />;
   }
-  
+
   // 如果没有详情数据，显示加载提示
   if (!detail) {
     return <div>{loadingText}</div>;
   }
-  
+
   // 获取标签和注解
   const labels = get(detail, 'metadata.labels', {});
   const annotations = get(detail, 'metadata.annotations', {});
-  
+
   // 检查是否有标签和注解数据
   const hasLabels = !isEmpty(labels);
   const hasAnnotations = !isEmpty(annotations);
   const hasMetadata = hasLabels || hasAnnotations;
-  
+
   // 如果没有元数据，显示"无数据"提示
   if (!hasMetadata) {
     return <EmptyTip>{t('NO_RESOURCE_FOUND')}</EmptyTip>;
   }
-  
+
   // 准备符合 MetaData 组件期望的数据结构
   const metadataDetail = {
     labels,
-    annotations
+    annotations,
   };
-  
+
   // 使用 KubeSphere 的 MetaData 组件显示元数据
   return <MetaData detail={metadataDetail} />;
 };

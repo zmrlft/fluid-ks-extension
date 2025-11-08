@@ -45,11 +45,7 @@ const HiddenFileInput = styled.input`
   display: none;
 `;
 
-const YamlEditor: React.FC<YamlEditorProps> = ({
-  formData,
-  onDataChange,
-  onValidationChange,
-}) => {
+const YamlEditor: React.FC<YamlEditorProps> = ({ formData, onDataChange, onValidationChange }) => {
   const [yamlContent, setYamlContent] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -134,7 +130,9 @@ const YamlEditor: React.FC<YamlEditorProps> = ({
         target: data.dataLoadConfig.target || [],
         policy: data.dataLoadConfig.policy || 'Once',
         ...(data.dataLoadConfig.schedule && { schedule: data.dataLoadConfig.schedule }),
-        ...(data.dataLoadConfig.ttlSecondsAfterFinished && { ttlSecondsAfterFinished: data.dataLoadConfig.ttlSecondsAfterFinished}),
+        ...(data.dataLoadConfig.ttlSecondsAfterFinished && {
+          ttlSecondsAfterFinished: data.dataLoadConfig.ttlSecondsAfterFinished,
+        }),
       };
 
       const dataLoad: any = {
@@ -158,7 +156,7 @@ const YamlEditor: React.FC<YamlEditorProps> = ({
     try {
       const documents = yamlStr.split('---').filter(doc => doc.trim());
       const resources = documents.map(doc => yaml.load(doc.trim()));
-      
+
       const dataset = resources.find(r => r.kind === 'Dataset');
       const runtime = resources.find(r => r.kind?.endsWith('Runtime'));
       const dataLoad = resources.find(r => r.kind === 'DataLoad');
@@ -189,13 +187,15 @@ const YamlEditor: React.FC<YamlEditorProps> = ({
         // 保存完整的Dataset spec
         datasetSpec: dataset.spec ? { ...dataset.spec } : undefined,
         enableDataLoad: !!dataLoad,
-        dataLoadConfig: dataLoad ? {
-          loadMetadata: dataLoad.spec?.loadMetadata || true,
-          target: dataLoad.spec?.target || [],
-          policy: dataLoad.spec?.policy || 'Once',
-          schedule: dataLoad.spec?.schedule,
-          ttlSecondsAfterFinished: dataLoad.spec?.ttlSecondsAfterFinished,
-        } : undefined,
+        dataLoadConfig: dataLoad
+          ? {
+              loadMetadata: dataLoad.spec?.loadMetadata || true,
+              target: dataLoad.spec?.target || [],
+              policy: dataLoad.spec?.policy || 'Once',
+              schedule: dataLoad.spec?.schedule,
+              ttlSecondsAfterFinished: dataLoad.spec?.ttlSecondsAfterFinished,
+            }
+          : undefined,
         // 保存完整的DataLoad spec
         dataLoadSpec: dataLoad?.spec ? { ...dataLoad.spec } : undefined,
       };
@@ -275,20 +275,13 @@ const YamlEditor: React.FC<YamlEditorProps> = ({
         <EditorTitle>{t('YAML_CONFIGURATION')}</EditorTitle>
       </EditorHeader>
       {error && (
-        <Alert
-          type="error"
-          title={t('YAML_ERROR')}
-          style={{ marginBottom: 16 }}
-        >
-          {error}  {'>_<'}
+        <Alert type="error" title={t('YAML_ERROR')} style={{ marginBottom: 16 }}>
+          {error} {'>_<'}
         </Alert>
       )}
 
       <EditorWrapper>
-        <CodeEditor
-          value={yamlContent}
-          onChange={handleYamlChange}
-        />
+        <CodeEditor value={yamlContent} onChange={handleYamlChange} />
       </EditorWrapper>
 
       {/* <HiddenFileInput

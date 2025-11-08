@@ -8,7 +8,12 @@ import { DownloadDuotone } from '@kubed/icons';
 import { transformRequestParams } from '../../../utils';
 import { deleteResource, handleBatchResourceDelete } from '../../../utils/deleteResource';
 
-import { getApiPath, getWebSocketUrl, request, getCurrentClusterFromUrl } from '../../../utils/request';
+import {
+  getApiPath,
+  getWebSocketUrl,
+  request,
+  getCurrentClusterFromUrl,
+} from '../../../utils/request';
 import CreateDataloadModal from '../components/CreateDataloadModal';
 import { getStatusIndicatorType } from '../../../utils/getStatusIndicatorType';
 import { useNamespaces } from '../../../utils/useNamespaces';
@@ -67,16 +72,16 @@ const formatDataLoad = (item: Record<string, any>): DataLoad => {
   const dataload = {
     ...item,
     metadata: item.metadata || {},
-    spec: item.spec || { 
+    spec: item.spec || {
       dataset: { name: '-' },
     },
-    status: item.status || { 
-      phase: '-', 
+    status: item.status || {
+      phase: '-',
       duration: '-',
-      conditions: []
-    }
+      conditions: [],
+    },
   };
-  
+
   return dataload;
 };
 
@@ -103,15 +108,15 @@ const DataLoadList: React.FC = () => {
 
   // 监听数据变化，当数据加载任务数量发生变化时清空选择状态
   const handleDataChange = (newData: DataLoad[]) => {
-    console.log("=== handleDataChange 被调用 ===");
-    console.log("数据变化检测:", {
+    console.log('=== handleDataChange 被调用 ===');
+    console.log('数据变化检测:', {
       previousLength: previousDataLength,
       newLength: newData?.length || 0,
-      newData: newData
+      newData: newData,
     });
 
     if (newData && previousDataLength > 0 && newData.length !== previousDataLength) {
-      console.log("检测到数据加载任务数量变化，清空选择状态");
+      console.log('检测到数据加载任务数量变化，清空选择状态');
       setSelectedDataLoads([]);
     }
 
@@ -121,7 +126,7 @@ const DataLoadList: React.FC = () => {
 
   // 创建防抖的刷新函数，1000ms内最多执行一次
   const debouncedRefresh = debounce(() => {
-    console.log("=== 执行防抖刷新 ===");
+    console.log('=== 执行防抖刷新 ===');
     if (tableRef.current) {
       tableRef.current.refetch();
     }
@@ -134,10 +139,10 @@ const DataLoadList: React.FC = () => {
     currentCluster,
     debouncedRefresh,
     onResourceDeleted: () => setSelectedDataLoads([]), // 当资源被删除时清空选择状态
-  })
+  });
 
   // 用useNamespaces获取所有命名空间
-  const { namespaces, isLoading, error, refetchNamespaces} = useNamespaces(currentCluster)
+  const { namespaces, isLoading, error, refetchNamespaces } = useNamespaces(currentCluster);
 
   // 处理命名空间变更
   const handleNamespaceChange = (value: string) => {
@@ -150,7 +155,7 @@ const DataLoadList: React.FC = () => {
     const url = `/fluid/${currentCluster}/${ns}/dataloads/${name}/resource-status`;
     navigate(url);
   };
-  
+
   // 创建数据加载任务按钮点击处理
   const handleCreateDataLoad = () => {
     setCreateModalVisible(true);
@@ -162,7 +167,9 @@ const DataLoadList: React.FC = () => {
       setSelectedDataLoads(prev => [...prev, dataload]);
     } else {
       const dataloadUid = get(dataload, 'metadata.uid', '');
-      setSelectedDataLoads(prev => prev.filter(item => get(item, 'metadata.uid', '') !== dataloadUid));
+      setSelectedDataLoads(prev =>
+        prev.filter(item => get(item, 'metadata.uid', '') !== dataloadUid),
+      );
     }
   };
 
@@ -177,11 +184,11 @@ const DataLoadList: React.FC = () => {
     }
   };
 
-
-
   // 检查全选状态
-  const isAllSelected = currentPageData.length > 0 && selectedDataLoads.length === currentPageData.length;
-  const isIndeterminate = selectedDataLoads.length > 0 && selectedDataLoads.length < currentPageData.length;
+  const isAllSelected =
+    currentPageData.length > 0 && selectedDataLoads.length === currentPageData.length;
+  const isIndeterminate =
+    selectedDataLoads.length > 0 && selectedDataLoads.length < currentPageData.length;
 
   // 批量删除数据加载任务（使用通用删除函数）
   const handleBatchDelete = async () => {
@@ -193,7 +200,7 @@ const DataLoadList: React.FC = () => {
     try {
       const resources = selectedDataLoads.map(dataload => ({
         name: get(dataload, 'metadata.name', ''),
-        namespace: get(dataload, 'metadata.namespace', '')
+        namespace: get(dataload, 'metadata.namespace', ''),
       }));
 
       await handleBatchResourceDelete(resources, {
@@ -201,7 +208,7 @@ const DataLoadList: React.FC = () => {
         onSuccess: () => {
           setSelectedDataLoads([]);
           // 可以在这里添加刷新逻辑
-        }
+        },
       });
     } finally {
       setIsDeleting(false);
@@ -224,11 +231,15 @@ const DataLoadList: React.FC = () => {
       width: '50px',
       render: (_: any, record: DataLoad) => {
         const dataloadUid = get(record, 'metadata.uid', '');
-        const isSelected = selectedDataLoads.some(item => get(item, 'metadata.uid', '') === dataloadUid);
+        const isSelected = selectedDataLoads.some(
+          item => get(item, 'metadata.uid', '') === dataloadUid,
+        );
         return (
           <Checkbox
             checked={isSelected}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSelectDataLoad(record, e.target.checked)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              handleSelectDataLoad(record, e.target.checked)
+            }
           />
         );
       },
@@ -240,9 +251,12 @@ const DataLoadList: React.FC = () => {
       searchable: true,
       render: (value: any, record: DataLoad) => (
         <a
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
-            handleNameClick(get(record, 'metadata.name', ''), get(record, 'metadata.namespace', 'default'));
+            handleNameClick(
+              get(record, 'metadata.name', ''),
+              get(record, 'metadata.namespace', 'default'),
+            );
           }}
           href="#"
         >
@@ -262,7 +276,9 @@ const DataLoadList: React.FC = () => {
       field: 'spec.dataset.name',
       width: '15%',
       canHide: true,
-      render: (value: any, record: DataLoad) => <span>{get(record, 'spec.dataset.name', '-')}</span>,
+      render: (value: any, record: DataLoad) => (
+        <span>{get(record, 'spec.dataset.name', '-')}</span>
+      ),
     },
     {
       title: t('STATUS'),
@@ -270,11 +286,15 @@ const DataLoadList: React.FC = () => {
       width: '10%',
       canHide: true,
       searchable: true,
-      render: (value: any, record: DataLoad) => <span>{
-        <StatusIndicator type={getStatusIndicatorType(value)} motion={false}>
-            {value || '-'}
-        </StatusIndicator>
-      }</span>,
+      render: (value: any, record: DataLoad) => (
+        <span>
+          {
+            <StatusIndicator type={getStatusIndicatorType(value)} motion={false}>
+              {value || '-'}
+            </StatusIndicator>
+          }
+        </span>
+      ),
     },
     {
       title: t('POLICY'),
@@ -288,7 +308,9 @@ const DataLoadList: React.FC = () => {
       field: 'spec.loadMetadata',
       width: '10%',
       canHide: true,
-      render: (value: any, record: DataLoad) => <span>{get(record, 'spec.loadMetadata', false) ? t('TRUE') : t('FALSE')}</span>,
+      render: (value: any, record: DataLoad) => (
+        <span>{get(record, 'spec.loadMetadata', false) ? t('TRUE') : t('FALSE')}</span>
+      ),
     },
     {
       title: t('DURATION'),
@@ -304,14 +326,16 @@ const DataLoadList: React.FC = () => {
       width: '15%',
       sortable: true,
       canHide: true,
-      render: (value: any, record: DataLoad) => <span>{get(record, 'metadata.creationTimestamp', '-')}</span>,
+      render: (value: any, record: DataLoad) => (
+        <span>{get(record, 'metadata.creationTimestamp', '-')}</span>
+      ),
     },
   ] as any;
 
   return (
     <div>
       <Banner
-        icon={<DownloadDuotone/>}
+        icon={<DownloadDuotone />}
         title={t('DATALOADS')}
         description={t('DATALOADS_DESC')}
         className="mb12"
@@ -319,15 +343,15 @@ const DataLoadList: React.FC = () => {
 
       {/* 连接状态指示器 */}
       <StatusIndicator type={wsConnected ? 'success' : 'warning'} motion={true}>
-        {wsConnected ? t("WSCONNECTED_TIP") : t("WSDISCONNECTED_TIP")}
+        {wsConnected ? t('WSCONNECTED_TIP') : t('WSDISCONNECTED_TIP')}
       </StatusIndicator>
 
       <StyledCard>
         {error ? (
-          <Empty 
-            icon="warning" 
-            title={t('FETCH_ERROR_TITLE')} 
-            description={error} 
+          <Empty
+            icon="warning"
+            title={t('FETCH_ERROR_TITLE')}
+            description={error}
             action={<Button onClick={debouncedRefresh}>{t('RETRY')}</Button>}
           />
         ) : (
@@ -336,7 +360,11 @@ const DataLoadList: React.FC = () => {
             rowKey="metadata.uid"
             tableName="dataload-list"
             columns={columns}
-            url={getApiPath(namespace ? `/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/dataloads` : '/kapis/data.fluid.io/v1alpha1/dataloads')}
+            url={getApiPath(
+              namespace
+                ? `/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/dataloads`
+                : '/kapis/data.fluid.io/v1alpha1/dataloads',
+            )}
             format={formatDataLoad}
             placeholder={t('SEARCH_BY_NAME')}
             transformRequestParams={transformRequestParams}
@@ -372,9 +400,7 @@ const DataLoadList: React.FC = () => {
                     {t('DELETE')} ({selectedDataLoads.length})
                   </Button>
                 )}
-                <Button onClick={handleCreateDataLoad}>
-                  {t('CREATE_DATALOAD')}
-                </Button>
+                <Button onClick={handleCreateDataLoad}>{t('CREATE_DATALOAD')}</Button>
               </div>
             }
           />
@@ -392,10 +418,8 @@ const DataLoadList: React.FC = () => {
           }
         }}
       />
-
-
     </div>
   );
 };
 
-export default DataLoadList; 
+export default DataLoadList;

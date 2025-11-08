@@ -39,7 +39,7 @@ const RemoveButton = styled.button`
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
-  
+
   &:hover {
     background-color: #fff2f2;
   }
@@ -58,7 +58,7 @@ const AddTieredStoreLevelButton = styled.button`
   align-items: center;
   justify-content: center;
   gap: 8px;
-  
+
   &:hover {
     border-color: #3385ff;
     background-color: #f8faff;
@@ -93,7 +93,7 @@ const RuntimeStep: React.FC<StepComponentProps> = ({
               level: 0,
               mediumtype: 'MEM',
               quota: '1Gi',
-              path: '/dev/shm'
+              path: '/dev/shm',
             },
           ],
         },
@@ -122,9 +122,9 @@ const RuntimeStep: React.FC<StepComponentProps> = ({
   // 更新存储层配置
   const updateTieredStore = (levelIndex: number, field: string, value: any) => {
     const currentTieredStore = formData.tieredStore || { levels: [] };
-    console.log("currenttieredstore:",currentTieredStore)
+    console.log('currenttieredstore:', currentTieredStore);
     const newLevels = [...currentTieredStore.levels];
-    
+
     if (!newLevels[levelIndex]) {
       newLevels[levelIndex] = {
         level: levelIndex,
@@ -132,7 +132,7 @@ const RuntimeStep: React.FC<StepComponentProps> = ({
         quota: '2Gi',
       };
     }
-    
+
     newLevels[levelIndex] = {
       ...newLevels[levelIndex],
       [field]: value,
@@ -166,7 +166,7 @@ const RuntimeStep: React.FC<StepComponentProps> = ({
   const removeTieredStoreLevel = (levelIndex: number) => {
     const currentTieredStore = formData.tieredStore || { levels: [] };
     const newLevels = currentTieredStore.levels.filter((_, index) => index !== levelIndex);
-    
+
     // 重新编号
     newLevels.forEach((level, index) => {
       level.level = index;
@@ -190,7 +190,7 @@ const RuntimeStep: React.FC<StepComponentProps> = ({
           <Alert
             type="info"
             title={t('RUNTIME_NAME_INFO')}
-            style={{ marginBottom: 24 , marginRight: 100}}
+            style={{ marginBottom: 24, marginRight: 100 }}
           >
             {t('RUNTIME_NAME_INFO_DESC')}
           </Alert>
@@ -202,7 +202,7 @@ const RuntimeStep: React.FC<StepComponentProps> = ({
               <Select
                 placeholder={t('SELECT_RUNTIME_TYPE')}
                 value={formValues.runtimeType}
-                onChange={(value) => handleFormChange('runtimeType', value)}
+                onChange={value => handleFormChange('runtimeType', value)}
                 style={{ width: '90%' }}
               >
                 {RUNTIME_TYPE_OPTIONS.map(option => (
@@ -222,7 +222,7 @@ const RuntimeStep: React.FC<StepComponentProps> = ({
                 min={1}
                 max={100}
                 value={formValues.replicas}
-                onChange={(value) => handleFormChange('replicas', value)}
+                onChange={value => handleFormChange('replicas', value)}
                 placeholder={t('REPLICAS_PLACEHOLDER')}
                 style={{ width: '100%' }}
               />
@@ -236,7 +236,7 @@ const RuntimeStep: React.FC<StepComponentProps> = ({
         </Row>
 
         <SectionTitle>{t('TIERED_STORAGE')}</SectionTitle>
-        
+
         {tieredStoreLevels.map((level, index) => (
           <TieredStoreItem key={index}>
             {tieredStoreLevels.length > 1 && (
@@ -260,7 +260,7 @@ const RuntimeStep: React.FC<StepComponentProps> = ({
                   </label>
                   <Select
                     value={level.mediumtype}
-                    onChange={(value) => updateTieredStore(index, 'mediumtype', value)}
+                    onChange={value => updateTieredStore(index, 'mediumtype', value)}
                   >
                     {MEDIUM_TYPE_OPTIONS.map(option => (
                       <Select.Option key={option.value} value={option.value}>
@@ -277,7 +277,9 @@ const RuntimeStep: React.FC<StepComponentProps> = ({
                   </label>
                   <Input
                     value={level.quota}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateTieredStore(index, 'quota', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      updateTieredStore(index, 'quota', e.target.value)
+                    }
                     placeholder="2Gi"
                   />
                 </div>
@@ -289,7 +291,9 @@ const RuntimeStep: React.FC<StepComponentProps> = ({
                   </label>
                   <Input
                     value={level.path || ''}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateTieredStore(index, 'path', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      updateTieredStore(index, 'path', e.target.value)
+                    }
                     placeholder={t('STORAGE_PATH_PLACEHOLDER')}
                   />
                 </div>

@@ -51,7 +51,7 @@ const StepItem = styled.div<{ isActive: boolean; isCompleted: boolean }>`
   }
 
   &:hover {
-    background-color: ${props => props.isActive ? '#fff' : '#f0f9ff'};
+    background-color: ${props => (props.isActive ? '#fff' : '#f0f9ff')};
   }
 `;
 
@@ -113,11 +113,7 @@ const OptionalBadge = styled.span`
   margin-left: 6px;
 `;
 
-const StepIndicator: React.FC<StepIndicatorProps> = ({
-  steps,
-  currentStep,
-  completedSteps,
-}) => {
+const StepIndicator: React.FC<StepIndicatorProps> = ({ steps, currentStep, completedSteps }) => {
   return (
     <StepContainer>
       {steps.map((step, index) => {
@@ -125,24 +121,14 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
         const isCompleted = completedSteps.has(index);
 
         return (
-          <StepItem
-            key={step.key}
-            isActive={isActive}
-            isCompleted={isCompleted}
-          >
+          <StepItem key={step.key} isActive={isActive} isCompleted={isCompleted}>
             <StepIcon isActive={isActive} isCompleted={isCompleted}>
-              {isCompleted ? (
-                <Check size={14} />
-              ) : (
-                <span>{index + 1}</span>
-              )}
+              {isCompleted ? <Check size={14} /> : <span>{index + 1}</span>}
             </StepIcon>
             <StepContent>
               <StepTitle isActive={isActive} isCompleted={isCompleted}>
                 {t(step.title)}
-                {step.optional && (
-                  <OptionalBadge>{t('OPTIONAL')}</OptionalBadge>
-                )}
+                {step.optional && <OptionalBadge>{t('OPTIONAL')}</OptionalBadge>}
               </StepTitle>
               <StepDescription isActive={isActive} isCompleted={isCompleted}>
                 {t(step.description)}

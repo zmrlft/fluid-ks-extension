@@ -39,7 +39,7 @@ const EditorWrapper = styled.div`
   border: 1px solid #e3e9ef;
   border-radius: 4px;
   overflow: hidden;
-  
+
   .kubed-code-editor {
     height: 100%;
   }
@@ -68,7 +68,9 @@ const DataLoadYamlEditor: React.FC<DataLoadYamlEditorProps> = ({
       target: data.dataLoadConfig?.target || [],
       policy: data.dataLoadConfig?.policy || 'Once',
       ...(data.dataLoadConfig?.schedule && { schedule: data.dataLoadConfig.schedule }),
-      ...(data.dataLoadConfig?.ttlSecondsAfterFinished !== undefined && { ttlSecondsAfterFinished: data.dataLoadConfig?.ttlSecondsAfterFinished }),
+      ...(data.dataLoadConfig?.ttlSecondsAfterFinished !== undefined && {
+        ttlSecondsAfterFinished: data.dataLoadConfig?.ttlSecondsAfterFinished,
+      }),
     };
 
     const dataLoad: any = {
@@ -89,7 +91,7 @@ const DataLoadYamlEditor: React.FC<DataLoadYamlEditorProps> = ({
   const yamlToFormData = (yamlStr: string): DatasetFormData | null => {
     try {
       const resource = yaml.load(yamlStr.trim());
-      
+
       if (!resource || typeof resource !== 'object' || !('kind' in resource)) {
         throw new Error('Invalid YAML format');
       }
@@ -158,20 +160,13 @@ const DataLoadYamlEditor: React.FC<DataLoadYamlEditorProps> = ({
         <EditorTitle>{t('YAML_CONFIGURATION')}</EditorTitle>
       </EditorHeader>
       {error && (
-        <Alert
-          type="error"
-          title={t('YAML_ERROR')}
-          style={{ marginBottom: 16 }}
-        >
+        <Alert type="error" title={t('YAML_ERROR')} style={{ marginBottom: 16 }}>
           {error}
         </Alert>
       )}
 
       <EditorWrapper>
-        <CodeEditor
-          value={yamlContent}
-          onChange={handleYamlChange}
-        />
+        <CodeEditor value={yamlContent} onChange={handleYamlChange} />
       </EditorWrapper>
     </EditorContainer>
   );

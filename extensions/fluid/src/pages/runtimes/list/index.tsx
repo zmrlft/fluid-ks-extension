@@ -92,10 +92,10 @@ const RuntimeList: React.FC = () => {
   const [showScaleModal, setShowScaleModal] = useState<boolean>(false);
   const [selectedRuntime, setSelectedRuntime] = useState<RuntimeItem | null>(null);
   const [newReplicas, setNewReplicas] = useState<string>('');
-  
+
   // 创建防抖的刷新函数，1000ms内最多执行一次
   const debouncedRefresh = debounce(() => {
-    console.log("=== 执行防抖刷新 ===");
+    console.log('=== 执行防抖刷新 ===');
     if (tableRef.current) {
       tableRef.current.refetch();
     }
@@ -123,7 +123,7 @@ const RuntimeList: React.FC = () => {
   // }, [currentCluster]);
 
   // 获取所有 namespace
-  const { namespaces, isLoading, error } = useNamespaces(currentCluster)
+  const { namespaces, isLoading, error } = useNamespaces(currentCluster);
 
   // 处理 namespace 变更
   const handleNamespaceChange = (value: string) => {
@@ -151,7 +151,14 @@ const RuntimeList: React.FC = () => {
     const currentRuntimeTypeMeta = runtimeTypeList[currentRuntimeType];
     const masterName = generateStatefulSetName(runtimeName, currentRuntimeTypeMeta.kind, 'master');
     const url = `/clusters/${cluster}/projects/${namespace}/statefulsets/${masterName}/resource-status`;
-    console.log('Opening master in new window:', masterName, 'in namespace:', namespace, 'cluster:', cluster);
+    console.log(
+      'Opening master in new window:',
+      masterName,
+      'in namespace:',
+      namespace,
+      'cluster:',
+      cluster,
+    );
     window.open(url, '_blank');
   };
 
@@ -161,7 +168,14 @@ const RuntimeList: React.FC = () => {
     const currentRuntimeTypeMeta = runtimeTypeList[currentRuntimeType];
     const workerName = generateStatefulSetName(runtimeName, currentRuntimeTypeMeta.kind, 'worker');
     const url = `/clusters/${cluster}/projects/${namespace}/statefulsets/${workerName}/resource-status`;
-    console.log('Opening worker in new window:', workerName, 'in namespace:', namespace, 'cluster:', cluster);
+    console.log(
+      'Opening worker in new window:',
+      workerName,
+      'in namespace:',
+      namespace,
+      'cluster:',
+      cluster,
+    );
     window.open(url, '_blank');
   };
 
@@ -230,8 +244,12 @@ const RuntimeList: React.FC = () => {
       metadata: {
         name: get(item, 'metadata.name', ''),
         namespace: get(item, 'metadata.namespace', ''),
-        uid: get(item, 'metadata.uid', `${get(item, 'metadata.namespace', '')}-${get(item, 'metadata.name', '')}-${typeMeta.kind}`),
-      }
+        uid: get(
+          item,
+          'metadata.uid',
+          `${get(item, 'metadata.namespace', '')}-${get(item, 'metadata.name', '')}-${typeMeta.kind}`,
+        ),
+      },
     };
   };
 
@@ -244,7 +262,7 @@ const RuntimeList: React.FC = () => {
       searchable: true,
       render: (_: string, record: RuntimeItem) => (
         <a
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleNameClick(record.name, record.namespace);
           }}
@@ -274,7 +292,7 @@ const RuntimeList: React.FC = () => {
             style={{ padding: '4px', minWidth: '24px', height: '24px' }}
             variant="text"
           >
-            <SortLargeDuotone size={16}/>
+            <SortLargeDuotone size={16} />
           </Button>
         </div>
       ),
@@ -286,7 +304,7 @@ const RuntimeList: React.FC = () => {
       canHide: true,
       render: (value: string, record: RuntimeItem) => (
         <a
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleMasterClick(record.name, record.namespace);
           }}
@@ -296,7 +314,6 @@ const RuntimeList: React.FC = () => {
           <StatusIndicator type={getStatusIndicatorType(value)} motion={false}>
             {value || '-'}
           </StatusIndicator>
-
         </a>
       ),
     },
@@ -307,7 +324,7 @@ const RuntimeList: React.FC = () => {
       canHide: true,
       render: (value: string, record: RuntimeItem) => (
         <a
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleWorkerClick(record.name, record.namespace);
           }}
@@ -327,9 +344,9 @@ const RuntimeList: React.FC = () => {
       canHide: true,
       render: (value: string) => (
         <StatusIndicator type={getStatusIndicatorType(value)} motion={false}>
-            {value || '-'}
+          {value || '-'}
         </StatusIndicator>
-      )
+      ),
     },
     {
       title: t('CREATION_TIME'),
@@ -349,7 +366,7 @@ const RuntimeList: React.FC = () => {
   return (
     <div>
       <Banner
-        icon={<RocketDuotone/>}
+        icon={<RocketDuotone />}
         title={t('RUNTIMES')}
         description={t('RUNTIMES_DESC')}
         className="mb12"
@@ -357,15 +374,15 @@ const RuntimeList: React.FC = () => {
 
       {/* 连接状态指示器 */}
       <StatusIndicator type={wsConnected ? 'success' : 'warning'} motion={true}>
-        {wsConnected ? t("WSCONNECTED_TIP") : t("WSDISCONNECTED_TIP")}
+        {wsConnected ? t('WSCONNECTED_TIP') : t('WSDISCONNECTED_TIP')}
       </StatusIndicator>
 
       <StyledCard>
         {error ? (
-          <Empty 
-            icon="warning" 
-            title={t('FETCH_ERROR_TITLE')} 
-            description={error} 
+          <Empty
+            icon="warning"
+            title={t('FETCH_ERROR_TITLE')}
+            description={error}
             action={<Button onClick={debouncedRefresh}>{t('RETRY')}</Button>}
           />
         ) : (
@@ -408,7 +425,6 @@ const RuntimeList: React.FC = () => {
                     </Select.Option>
                   ))}
                 </Select>
-                
               </ToolbarWrapper>
             }
           />

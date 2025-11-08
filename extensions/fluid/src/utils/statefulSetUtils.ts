@@ -1,6 +1,6 @@
 /**
  * 根据运行时类型生成StatefulSet名称的工具函数
- * 
+ *
  * 不同的运行时类型有不同的StatefulSet命名规则：
  * - JindoRuntime: ${runtimeName}-jindofs-${component}
  * - 其他运行时: ${runtimeName}-${component}
@@ -14,9 +14,9 @@
  * @returns StatefulSet名称
  */
 export const generateStatefulSetName = (
-  runtimeName: string, 
-  runtimeType: string, 
-  component: 'master' | 'worker'
+  runtimeName: string,
+  runtimeType: string,
+  component: 'master' | 'worker',
 ): string => {
   if (runtimeType === 'JindoRuntime') {
     return `${runtimeName}-jindofs-${component}`;
@@ -32,9 +32,9 @@ export const generateStatefulSetName = (
  * @returns StatefulSet名称
  */
 export const generateStatefulSetNameByDisplayName = (
-  runtimeName: string, 
-  runtimeDisplayName: string, 
-  component: 'master' | 'worker'
+  runtimeName: string,
+  runtimeDisplayName: string,
+  component: 'master' | 'worker',
 ): string => {
   if (runtimeDisplayName === 'Jindo') {
     return `${runtimeName}-jindofs-${component}`;

@@ -28,7 +28,7 @@ export const MountItem: React.FC<MountItemProps> = ({
     return validateKVPairs(options, {
       allowDuplicateKeys: false,
       allowEmptyKeys: false,
-      allowEmptyValues: true
+      allowEmptyValues: true,
     });
   };
 
@@ -39,16 +39,14 @@ export const MountItem: React.FC<MountItemProps> = ({
           <Trash size={25} />
         </RemoveButton>
       )}
-      
+
       <Row gutter={[16, 16]}>
         <Col span={12}>
           <div style={{ marginBottom: '16px' }}>
-            <FormLabel>
-              {t('DATA_SOURCE')}
-            </FormLabel>
+            <FormLabel>{t('DATA_SOURCE')}</FormLabel>
             <Input
               value={mount.mountPoint}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 onUpdate(index, 'mountPoint', e.target.value)
               }
               placeholder={t('DATA_SOURCE_PATH_PLACEHOLDER')}
@@ -57,12 +55,10 @@ export const MountItem: React.FC<MountItemProps> = ({
         </Col>
         <Col span={4}>
           <div style={{ marginBottom: '16px' }}>
-            <FormLabel>
-              {t('NAME')}
-            </FormLabel>
+            <FormLabel>{t('NAME')}</FormLabel>
             <Input
               value={mount.name}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 onUpdate(index, 'name', e.target.value)
               }
               placeholder="default"
@@ -74,12 +70,12 @@ export const MountItem: React.FC<MountItemProps> = ({
             <FormLabel>
               {t('MOUNT_PATH')}
               <OptionalLabel>
-                {t("MOUNT_PATH_TIP") }/{mount.name || 'Name'}
+                {t('MOUNT_PATH_TIP')}/{mount.name || 'Name'}
               </OptionalLabel>
             </FormLabel>
             <Input
               value={mount.path}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 onUpdate(index, 'path', e.target.value)
               }
               placeholder={`/${mount.name || 'Name'}`}
@@ -91,23 +87,19 @@ export const MountItem: React.FC<MountItemProps> = ({
       <Row gutter={[16, 16]}>
         <Col span={4}>
           <SwitchContainer>
-            <SwitchLabel>
-              {t('READ_ONLY')}
-            </SwitchLabel>
+            <SwitchLabel>{t('READ_ONLY')}</SwitchLabel>
             <Switch
               checked={mount.readOnly}
-              onChange={(checked) => onUpdate(index, 'readOnly', checked)}
+              onChange={checked => onUpdate(index, 'readOnly', checked)}
             />
           </SwitchContainer>
         </Col>
         <Col span={4}>
           <SwitchContainer>
-            <SwitchLabel>
-              {t('SHARED')}
-            </SwitchLabel>
+            <SwitchLabel>{t('SHARED')}</SwitchLabel>
             <Switch
               checked={mount.shared}
-              onChange={(checked) => onUpdate(index, 'shared', checked)}
+              onChange={checked => onUpdate(index, 'shared', checked)}
             />
           </SwitchContainer>
         </Col>
@@ -115,9 +107,7 @@ export const MountItem: React.FC<MountItemProps> = ({
 
       <OptionsContainer>
         <div style={{ marginBottom: '16px' }}>
-          <FormLabel>
-            {t('OPTIONS')}
-          </FormLabel>
+          <FormLabel>{t('OPTIONS')}</FormLabel>
           <KVRecordInput
             value={mount.options}
             onChange={(newOptions: Array<{ key: string; value: string }>) => {
@@ -133,9 +123,7 @@ export const MountItem: React.FC<MountItemProps> = ({
         <div style={{ marginBottom: '16px' }}>
           <FormLabel>
             {t('ENCRYPT_OPTIONS')}
-            <OptionalLabel>
-              {t("ENCRYPT_OPTIONS_tip")}
-            </OptionalLabel>
+            <OptionalLabel>{t('ENCRYPT_OPTIONS_tip')}</OptionalLabel>
           </FormLabel>
           <EncryptOptionsInput
             value={mount.encryptOptions || []}

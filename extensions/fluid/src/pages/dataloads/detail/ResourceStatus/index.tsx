@@ -9,12 +9,12 @@ import { get } from 'lodash';
 import styled from 'styled-components';
 import { Book2Duotone, DownloadDuotone, PlayDuotone } from '@kubed/icons';
 import { getCurrentClusterFromUrl } from '../../../../utils';
-import { 
-  CardWrapper, 
-  InfoGrid, 
-  InfoItem, 
-  InfoLabel, 
-  InfoValue 
+import {
+  CardWrapper,
+  InfoGrid,
+  InfoItem,
+  InfoLabel,
+  InfoValue,
 } from '../../../shared/components/ResourceStatusStyles';
 import { getStatusIndicatorType } from '../../../../utils/getStatusIndicatorType';
 
@@ -50,7 +50,9 @@ const TopologyNode = styled.div<{ clickable?: boolean }>`
   min-width: 100px;
   transition: all 0.2s ease;
 
-  ${props => props.clickable && `
+  ${props =>
+    props.clickable &&
+    `
     cursor: pointer;
 
     &:hover {
@@ -116,7 +118,11 @@ const ResourceStatus = () => {
   // 处理Dataset点击跳转
   const handleDatasetClick = () => {
     const datasetName = get(detail, 'spec.dataset.name');
-    const datasetNamespace = get(detail, 'spec.dataset.namespace', get(detail, 'metadata.namespace'));
+    const datasetNamespace = get(
+      detail,
+      'spec.dataset.namespace',
+      get(detail, 'metadata.namespace'),
+    );
     if (datasetName && datasetNamespace) {
       const url = `/fluid/${currentCluster}/${datasetNamespace}/datasets/${datasetName}/resource-status`;
       window.open(url, '_blank');
@@ -194,13 +200,12 @@ const ResourceStatus = () => {
               <InfoLabel>{t('STATUS')}</InfoLabel>
               <InfoValue>
                 <StatusIndicator
-                    type={getStatusIndicatorType(get(detail, 'status.phase', '-'))}
-                    motion={false}
+                  type={getStatusIndicatorType(get(detail, 'status.phase', '-'))}
+                  motion={false}
                 >
                   {get(detail, 'status.phase', '-')}
                 </StatusIndicator>
-                
-                </InfoValue>
+              </InfoValue>
             </InfoItem>
             <InfoItem>
               <InfoLabel>{t('DATASET')}</InfoLabel>
@@ -212,7 +217,9 @@ const ResourceStatus = () => {
             </InfoItem>
             <InfoItem>
               <InfoLabel>{t('LOAD_METADATA')}</InfoLabel>
-              <InfoValue>{get(detail, 'spec.loadMetadata', false) ? t('TRUE') : t('FALSE')}</InfoValue>
+              <InfoValue>
+                {get(detail, 'spec.loadMetadata', false) ? t('TRUE') : t('FALSE')}
+              </InfoValue>
             </InfoItem>
             <InfoItem>
               <InfoLabel>{t('DURATION')}</InfoLabel>
@@ -228,9 +235,7 @@ const ResourceStatus = () => {
 
       {/* 拓扑图卡片 */}
       <CardWrapper>
-        <Card sectionTitle={t('DATALOAD_TOPOLOGY')}>
-          {renderTopologyGraph()}
-        </Card>
+        <Card sectionTitle={t('DATALOAD_TOPOLOGY')}>{renderTopologyGraph()}</Card>
       </CardWrapper>
 
       {/* 目标路径信息 */}
@@ -241,7 +246,9 @@ const ResourceStatus = () => {
               {get(detail, 'spec.target', []).map((target: any, index: number) => (
                 <React.Fragment key={index}>
                   <InfoItem>
-                    <InfoLabel>{t('PATH')} {index + 1}</InfoLabel>
+                    <InfoLabel>
+                      {t('PATH')} {index + 1}
+                    </InfoLabel>
                     <InfoValue>{target.path || '-'}</InfoValue>
                   </InfoItem>
                   <InfoItem>
@@ -254,7 +261,6 @@ const ResourceStatus = () => {
           </Card>
         </CardWrapper>
       )}
-
     </>
   );
 };

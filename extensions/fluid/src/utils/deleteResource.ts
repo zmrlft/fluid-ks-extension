@@ -60,7 +60,7 @@ const getResourceDisplayName = (resourceType: string): string => {
  */
 const getDeleteApiPath = (options: DeleteResourceOptions): string => {
   const { resourceType, namespace, name, runtimeType } = options;
-  
+
   switch (resourceType) {
     case 'dataset':
       return `/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets/${name}`;
@@ -131,14 +131,14 @@ export const handleResourceDelete = async (options: HandleDeleteOptions): Promis
     onError,
     confirmMessage,
     successMessage,
-    skipConfirm = false
+    skipConfirm = false,
   } = options;
 
   // 确认对话框
   if (!skipConfirm) {
     const message = confirmMessage || getDefaultConfirmMessage(resourceType, name);
     const confirmed = window.confirm(message);
-    
+
     if (!confirmed) {
       return;
     }
@@ -150,7 +150,7 @@ export const handleResourceDelete = async (options: HandleDeleteOptions): Promis
       resourceType,
       name,
       namespace,
-      runtimeType
+      runtimeType,
     });
 
     // 显示成功消息
@@ -162,10 +162,10 @@ export const handleResourceDelete = async (options: HandleDeleteOptions): Promis
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('删除操作失败:', error);
-    
+
     // 显示错误消息
     notify.error(`删除${getResourceDisplayName(resourceType)}失败: ${errorMessage}`);
-    
+
     // 执行错误回调
     onError?.(error instanceof Error ? error : new Error(errorMessage));
   }
@@ -178,7 +178,7 @@ export const handleResourceDelete = async (options: HandleDeleteOptions): Promis
  */
 export const handleBatchResourceDelete = async (
   resources: Array<{ name: string; namespace: string }>,
-  options: Omit<HandleDeleteOptions, 'name' | 'namespace'>
+  options: Omit<HandleDeleteOptions, 'name' | 'namespace'>,
 ): Promise<void> => {
   const { resourceType, runtimeType, onSuccess, onError, skipConfirm = false } = options;
 
@@ -191,7 +191,7 @@ export const handleBatchResourceDelete = async (
     const displayName = getResourceDisplayName(resourceType);
     const message = `确定要删除选中的 ${resources.length} 个${displayName}吗？此操作不可撤销。删除操作不会立马成功，请等待一会重新刷新`;
     const confirmed = window.confirm(message);
-    
+
     if (!confirmed) {
       return;
     }
@@ -204,8 +204,8 @@ export const handleBatchResourceDelete = async (
         resourceType,
         name: resource.name,
         namespace: resource.namespace,
-        runtimeType
-      })
+        runtimeType,
+      }),
     );
 
     await Promise.all(deletePromises);
@@ -219,11 +219,11 @@ export const handleBatchResourceDelete = async (
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('批量删除失败:', error);
-    
+
     // 显示错误消息
     const displayName = getResourceDisplayName(resourceType);
     notify.error(`删除${displayName}失败: ${errorMessage}`);
-    
+
     // 执行错误回调
     onError?.(error instanceof Error ? error : new Error(errorMessage));
   }

@@ -1,6 +1,6 @@
 export interface SecretKeySelector {
-  name: string;  // secret名称
-  key: string;   // secret中的键
+  name: string; // secret名称
+  key: string; // secret中的键
 }
 
 export interface EncryptOptionSource {
@@ -8,7 +8,7 @@ export interface EncryptOptionSource {
 }
 
 export interface EncryptOption {
-  name: string;  // 加密选项名称
+  name: string; // 加密选项名称
   valueFrom?: EncryptOptionSource;
 }
 
@@ -19,7 +19,7 @@ export interface Mount {
   readOnly: boolean;
   shared: boolean;
   options: Array<{ key: string; value: string }>;
-  encryptOptions?: EncryptOption[];  // 新增字段
+  encryptOptions?: EncryptOption[]; // 新增字段
 }
 
 export interface MountItemProps {

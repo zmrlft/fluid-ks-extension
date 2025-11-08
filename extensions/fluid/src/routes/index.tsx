@@ -31,7 +31,7 @@ export default [
         path: 'dataloads',
         element: <DataLoadList />,
       },
-    ]
+    ],
   },
   ...datasetDetailRoutes,
   ...runtimeDetailRoutes,

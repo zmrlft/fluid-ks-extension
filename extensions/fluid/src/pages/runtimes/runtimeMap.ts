@@ -81,4 +81,4 @@ export const runtimeTypeList: RuntimeTypeMeta[] = [
         ? `/kapis/data.fluid.io/v1alpha1/namespaces/${namespace}/vineyardruntimes`
         : '/kapis/data.fluid.io/v1alpha1/vineyardruntimes',
   },
-]; 
+];

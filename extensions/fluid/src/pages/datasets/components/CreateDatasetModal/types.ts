@@ -52,12 +52,12 @@ export interface DatasetFormData {
   //   jvmOptions?: [...];
   //   ... 以及其他复杂的嵌套字段
   // 这些运行时的 replicas 字段均用于定义分布式缓存系统中工作节点的数量，直接影响数据缓存和处理的并行能力 (有必要向ui用户说明)
-  
+
   // 存储配置
   tieredStore?: {
     levels: Array<{
       level: number;
-      mediumtype: "MEM" | "SSD" | "HDD" | String;
+      mediumtype: 'MEM' | 'SSD' | 'HDD' | String;
       quota: string;
       path?: string;
       high?: Number;
@@ -70,14 +70,14 @@ export interface DatasetFormData {
   //   tieredstore:
   //     levels:
   //         - mediumtype: MEM
-  //           path: /dev/shm 
+  //           path: /dev/shm
   //           quota: 1Gi
   //           high: "0.95"
   //           low: "0.7"
   //           volumeType: hostPath
   // path表示文件路径，用于定义该层级存储的路径,支持多个路径，多个路径用逗号分隔，如 “/mnt/cache1,/mnt/cache2”
   // 指定该存储层级使用的卷类型，可选值为 hostPath、emptyDir 和 volumeTemplate。若未明确设置，默认值为 hostPath
-  
+
   // 数据预热配置
   enableDataLoad: boolean;
   dataLoadConfig?: {
@@ -113,7 +113,7 @@ export interface DatasetFormData {
   dataLoadNamespace?: string; // DataLoad所在的命名空间
   selectedDataset?: string; // 选择的数据集名称
   selectedDatasetNamespace?: string; // 选择的数据集所在的命名空间
-  
+
   // 其他字段
   // Dataset高级设置 - 这些字段在API文档中定义但UI暂未支持，可通过YAML编辑
   // 以下字段将通过完整的Dataset spec支持，用户可在YAML模式下编辑：
@@ -130,9 +130,9 @@ export interface DatasetFormData {
   datasetSpec?: Record<string, any>;
 }
 
-export type RuntimeType = 
+export type RuntimeType =
   | 'AlluxioRuntime'
-  | 'JindoRuntime' 
+  | 'JindoRuntime'
   | 'JuiceFSRuntime'
   | 'GooseFSRuntime'
   | 'EFCRuntime'
@@ -149,7 +149,7 @@ export interface StepComponentProps {
   formData: DatasetFormData;
   onDataChange: (data: Partial<DatasetFormData>) => void;
   onValidationChange: (isValid: boolean) => void;
-  isIndependent?: boolean
+  isIndependent?: boolean;
 }
 
 export interface StepConfig {

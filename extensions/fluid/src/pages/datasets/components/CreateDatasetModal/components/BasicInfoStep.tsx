@@ -36,7 +36,7 @@ const validateLabels = (labels: Array<{ key: string; value: string }>) => {
   return validateKVPairs(labels, {
     allowDuplicateKeys: false,
     allowEmptyKeys: false,
-    allowEmptyValues: true
+    allowEmptyValues: true,
   });
 };
 
@@ -52,23 +52,26 @@ const BasicInfoStep: React.FC<StepComponentProps> = ({
     description: '',
   });
   // 获取命名空间列表
-  const { namespaces, isLoading, error, refetchNamespaces} = useNamespaces('')
+  const { namespaces, isLoading, error, refetchNamespaces } = useNamespaces('');
 
   // 构建标签对象的通用函数
-  const buildLabelsObject = useCallback((labelArray: Array<{ key: string; value: string }>): Record<string, string> | undefined => {
-    const labelsObj: Record<string, string> = {};
+  const buildLabelsObject = useCallback(
+    (labelArray: Array<{ key: string; value: string }>): Record<string, string> | undefined => {
+      const labelsObj: Record<string, string> = {};
 
-    labelArray.forEach(({ key, value }) => {
-      const trimmedKey = key?.trim();
-      const trimmedValue = value?.trim();
-      if (trimmedKey && trimmedValue) {
-        // 如果键已存在，保留最后一个值（用户最后输入的）
-        labelsObj[trimmedKey] = trimmedValue;
-      }
-    });
+      labelArray.forEach(({ key, value }) => {
+        const trimmedKey = key?.trim();
+        const trimmedValue = value?.trim();
+        if (trimmedKey && trimmedValue) {
+          // 如果键已存在，保留最后一个值（用户最后输入的）
+          labelsObj[trimmedKey] = trimmedValue;
+        }
+      });
 
-    return Object.keys(labelsObj).length > 0 ? labelsObj : undefined;
-  }, []);
+      return Object.keys(labelsObj).length > 0 ? labelsObj : undefined;
+    },
+    [],
+  );
 
   // 验证数据集名称
   const validateDatasetName = useCallback((name: string): Record<string, boolean | string> => {
@@ -79,14 +82,14 @@ const BasicInfoStep: React.FC<StepComponentProps> = ({
     if (!nameRegex.test(name)) {
       return {
         isValid: false,
-        message: t('DATASET_NAME_INVALID_FORMAT')
+        message: t('DATASET_NAME_INVALID_FORMAT'),
       };
     }
 
     if (name.length > 63) {
       return {
         isValid: false,
-        message: t('DATASET_NAME_TOO_LONG')
+        message: t('DATASET_NAME_TOO_LONG'),
       };
     }
 
@@ -94,7 +97,10 @@ const BasicInfoStep: React.FC<StepComponentProps> = ({
   }, []);
 
   // 计算名称验证结果
-  const nameValidation = useMemo(() => validateDatasetName(formValues.name), [formValues.name, validateDatasetName]);
+  const nameValidation = useMemo(
+    () => validateDatasetName(formValues.name),
+    [formValues.name, validateDatasetName],
+  );
 
   // 监听formValues状态变化，用于调试
   useEffect(() => {
@@ -106,10 +112,12 @@ const BasicInfoStep: React.FC<StepComponentProps> = ({
     // 只在真正需要初始化时才执行
     console.log('formData变化时的状态:', formData);
     console.log('formValues变化时的状态:', formValues);
-    if (formData.name !== formValues.name ||
-        formData.namespace !== formValues.namespace ||
-        formData.description !== formValues.description) {
-          console.log('执行初始化表单数据');
+    if (
+      formData.name !== formValues.name ||
+      formData.namespace !== formValues.namespace ||
+      formData.description !== formValues.description
+    ) {
+      console.log('执行初始化表单数据');
 
       const newFormValues = {
         name: formData.name || '',
@@ -144,10 +152,15 @@ const BasicInfoStep: React.FC<StepComponentProps> = ({
 
       // 比较当前标签和formData标签是否相同
       const currentValidLabels = labels.filter(label => label.key && label.value);
-      const isLabelsEqual = formDataLabels.length === currentValidLabels.length &&
+      const isLabelsEqual =
+        formDataLabels.length === currentValidLabels.length &&
         formDataLabels.every((formLabel, index) => {
           const currentLabel = currentValidLabels[index];
-          return currentLabel && formLabel.key === currentLabel.key && formLabel.value === currentLabel.value;
+          return (
+            currentLabel &&
+            formLabel.key === currentLabel.key &&
+            formLabel.value === currentLabel.value
+          );
         });
 
       // 只有在标签不相等时才重新初始化
@@ -158,30 +171,33 @@ const BasicInfoStep: React.FC<StepComponentProps> = ({
   }, [formData.labels]);
 
   // 表单值变化处理
-  const handleFormChange = useCallback((field: string, value: string) => {
-    console.log('handleFormChange 执行时的状态:', {
-      currentFormValues: formValues,
-      currentLabels: labels,
-      field,
-      value
-    });
-    
-    const newValues = { ...formValues, [field]: value };
-    setFormValues(newValues);
+  const handleFormChange = useCallback(
+    (field: string, value: string) => {
+      console.log('handleFormChange 执行时的状态:', {
+        currentFormValues: formValues,
+        currentLabels: labels,
+        field,
+        value,
+      });
 
-    // 只更新基本信息字段，保留其他字段（如annotations、runtimeSpec等）
-    onDataChange({
-      name: newValues.name,
-      namespace: newValues.namespace,
-      description: newValues.description,
-      labels: buildLabelsObject(labels),
-    });
+      const newValues = { ...formValues, [field]: value };
+      setFormValues(newValues);
 
-    // 验证表单
-    const nameValid = validateDatasetName(newValues.name);
-    const isValid = nameValid.isValid && newValues.namespace;
-    onValidationChange(!!isValid);
-  }, [formValues, labels, buildLabelsObject, onDataChange, onValidationChange, validateDatasetName]);
+      // 只更新基本信息字段，保留其他字段（如annotations、runtimeSpec等）
+      onDataChange({
+        name: newValues.name,
+        namespace: newValues.namespace,
+        description: newValues.description,
+        labels: buildLabelsObject(labels),
+      });
+
+      // 验证表单
+      const nameValid = validateDatasetName(newValues.name);
+      const isValid = nameValid.isValid && newValues.namespace;
+      onValidationChange(!!isValid);
+    },
+    [formValues, labels, buildLabelsObject, onDataChange, onValidationChange, validateDatasetName],
+  );
 
   return (
     <StepContainer>
@@ -194,32 +210,26 @@ const BasicInfoStep: React.FC<StepComponentProps> = ({
           </ErrorMessage>
         )}
 
-        <Row gutter={[16, 16]} style={{ marginBottom: '16px', display: 'flex', gap : '16px' }}>
+        <Row gutter={[16, 16]} style={{ marginBottom: '16px', display: 'flex', gap: '16px' }}>
           <Col span={12} style={{ flex: 1 }}>
-            <FieldLabel>
-              {t('NAME')} *
-            </FieldLabel>
+            <FieldLabel>{t('NAME')} *</FieldLabel>
             <Input
               placeholder={t('DATASET_NAME_PLACEHOLDER')}
               value={formValues.name}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFormChange('name', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                handleFormChange('name', e.target.value)
+              }
               status={!nameValidation.isValid && formValues.name ? 'error' : undefined}
             />
-            {!nameValidation.isValid && (
-              <ErrorMessage>
-                {nameValidation.message}
-              </ErrorMessage>
-            )}
+            {!nameValidation.isValid && <ErrorMessage>{nameValidation.message}</ErrorMessage>}
           </Col>
           <Col span={12} style={{ flex: 1 }}>
-            <FieldLabel>
-              {t('PROJECT')} *
-            </FieldLabel>
+            <FieldLabel>{t('PROJECT')} *</FieldLabel>
             <Select
               style={{ width: '100%' }}
               placeholder={t('SELECT_PROJECT')}
               value={formValues.namespace}
-              onChange={(value) => handleFormChange('namespace', value)}
+              onChange={value => handleFormChange('namespace', value)}
               loading={isLoading}
               disabled={isLoading}
             >
@@ -233,23 +243,21 @@ const BasicInfoStep: React.FC<StepComponentProps> = ({
         </Row>
 
         <div style={{ marginBottom: '16px' }}>
-          <FieldLabel>
-            {t('DESCRIPTION')}
-          </FieldLabel>
+          <FieldLabel>{t('DESCRIPTION')}</FieldLabel>
           <Textarea
             placeholder={t('DATASET_DESCRIPTION_PLACEHOLDER')}
             rows={3}
             maxLength={256}
             value={formValues.description}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleFormChange('description', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+              handleFormChange('description', e.target.value)
+            }
             showCount
           />
         </div>
 
         <div style={{ marginBottom: '16px' }}>
-          <FieldLabel>
-            {t('LABELS')}
-          </FieldLabel>
+          <FieldLabel>{t('LABELS')}</FieldLabel>
           <KVRecordInput
             value={labels}
             onChange={(newLabels: Array<{ key: string; value: string }>) => {

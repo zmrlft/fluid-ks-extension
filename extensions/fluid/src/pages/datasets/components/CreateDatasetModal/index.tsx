@@ -1,6 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { Button, Modal, Switch, notify, Steps, TabStep } from '@kubed/components';
-import { Database, Cogwheel, RocketDuotone, DownloadDuotone, FolderDuotone, Book2Duotone } from '@kubed/icons';
+import {
+  Database,
+  Cogwheel,
+  RocketDuotone,
+  DownloadDuotone,
+  FolderDuotone,
+  Book2Duotone,
+} from '@kubed/icons';
 import styled from 'styled-components';
 
 const ModalContent = styled.div`
@@ -19,7 +26,10 @@ const ModalContent = styled.div`
     z-index: 1;
   }
 
-  input, textarea, select, .kubed-select {
+  input,
+  textarea,
+  select,
+  .kubed-select {
     pointer-events: auto !important;
     position: relative;
     z-index: 2;
@@ -77,7 +87,7 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
   const [stepValidations, setStepValidations] = useState<Record<number, boolean>>({});
   const [isYamlMode, setIsYamlMode] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  
+
   const [formData, setFormData] = useState<DatasetFormData>({
     name: '',
     namespace: 'default',
@@ -124,17 +134,13 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
             {t('PREVIOUS')}
           </Button>
         )}
-        {currentStepConfig?.optional && !isLastStep &&(
+        {currentStepConfig?.optional && !isLastStep && (
           <Button variant="text" onClick={handleSkip}>
             {t('SKIP')}
           </Button>
         )}
         {!isLastStep && (
-          <Button
-            variant="filled"
-            onClick={handleNext}
-            disabled={!currentStepValid}
-          >
+          <Button variant="filled" onClick={handleNext} disabled={!currentStepValid}>
             {t('NEXT')}
           </Button>
         )}
@@ -164,7 +170,10 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
   // 上一步
   const handlePrevious = () => {
     if (currentStep > 0) {
-      setCompletedSteps(prev => {prev.delete(currentStep);return prev;});
+      setCompletedSteps(prev => {
+        prev.delete(currentStep);
+        return prev;
+      });
       setCurrentStep(currentStep - 1);
     }
   };
@@ -208,7 +217,9 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Failed to create ${resource.kind}: ${response.status} ${response.statusText}\n${errorText}`);
+      throw new Error(
+        `Failed to create ${resource.kind}: ${response.status} ${response.statusText}\n${errorText}`,
+      );
     }
 
     return response.json();
@@ -324,7 +335,12 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
 
     // 按顺序创建资源
     for (const resource of resources) {
-      if (resource && typeof resource === 'object' && 'kind' in resource && 'metadata' in resource) {
+      if (
+        resource &&
+        typeof resource === 'object' &&
+        'kind' in resource &&
+        'metadata' in resource
+      ) {
         console.log(`Creating ${resource.kind}:`, resource);
         await createResource(resource, resource.metadata.namespace || formData.namespace);
         console.log(`Successfully created ${resource.kind}: ${resource.metadata.name}`);
@@ -396,7 +412,15 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
   return (
     <Modal
       title={
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingRight: '40px' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            width: '100%',
+            paddingRight: '40px',
+          }}
+        >
           <span>{t('CREATE_DATASET')}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
             <a
@@ -405,14 +429,20 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
               rel="noopener noreferrer"
               style={{ color: '#3385ff', textDecoration: 'none', fontSize: '14px' }}
             >
-              {t("API_REFERENCE")}
+              {t('API_REFERENCE')}
             </a>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'absolute', right: 70, top: 20 }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                position: 'absolute',
+                right: 70,
+                top: 20,
+              }}
+            >
               <span style={{ fontSize: '14px', color: '#79879c' }}>{t('YAML_MODE')}</span>
-              <Switch
-                checked={isYamlMode}
-                onChange={setIsYamlMode}
-              />
+              <Switch checked={isYamlMode} onChange={setIsYamlMode} />
             </div>
           </div>
         </div>
@@ -421,21 +451,20 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
       onCancel={handleClose}
       width={960}
       style={{ height: '80vh', maxHeight: '800px' }}
-      footer={isYamlMode ? (
-        <>
-          <Button variant="outline" onClick={handleClose}>
-            {t('CANCEL')}
-          </Button>
-          <Button
-            variant="filled"
-            color="success"
-            onClick={handleCreate}
-            loading={isCreating}
-          >
-            {t('CREATE')}
-          </Button>
-        </>
-      ) : renderStepsModalFooter()}
+      footer={
+        isYamlMode ? (
+          <>
+            <Button variant="outline" onClick={handleClose}>
+              {t('CANCEL')}
+            </Button>
+            <Button variant="filled" color="success" onClick={handleCreate} loading={isCreating}>
+              {t('CREATE')}
+            </Button>
+          </>
+        ) : (
+          renderStepsModalFooter()
+        )
+      }
       closable={true}
       maskClosable={false}
     >
@@ -444,7 +473,7 @@ const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
           <YamlEditor
             formData={formData}
             onDataChange={handleDataChange}
-            onValidationChange={(isValid) => handleValidationChange(-1, isValid)}
+            onValidationChange={isValid => handleValidationChange(-1, isValid)}
           />
         ) : (
           <Steps active={currentStep} variant="tab">

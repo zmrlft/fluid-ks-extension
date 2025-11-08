@@ -42,7 +42,11 @@ interface RuntimeTypeInfo {
 
 const RuntimeDetail: React.FC = () => {
   const module = 'runtimes';
-  const { cluster, namespace, name } = useParams<{ cluster: string; namespace: string; name: string }>();
+  const { cluster, namespace, name } = useParams<{
+    cluster: string;
+    namespace: string;
+    name: string;
+  }>();
   const navigate = useNavigate();
   const [runtimeInfo, setRuntimeInfo] = useState<RuntimeTypeInfo | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -71,16 +75,16 @@ const RuntimeDetail: React.FC = () => {
   // 动态检测运行时类型并获取详情
   useEffect(() => {
     const fetchRuntimeDetail = async () => {
-      console.log("fetchRuntimeDetail被调用了")
+      console.log('fetchRuntimeDetail被调用了');
       try {
         setLoading(true);
-        
+
         // 尝试不同类型的运行时API
         for (const typeMeta of runtimeTypeList) {
           try {
             const apiPath = `/apis/data.fluid.io/v1alpha1/namespaces/${namespace}/${typeMeta.plural}/${name}`;
             const response = await request(apiPath);
-            
+
             if (response.ok) {
               const data = await response.json();
               setRuntimeInfo({ runtime: data, typeMeta });
@@ -92,10 +96,9 @@ const RuntimeDetail: React.FC = () => {
             console.log(`Failed to fetch ${typeMeta.kind}:`, err);
           }
         }
-        
+
         // 如果所有类型都尝试失败了
         throw new Error('Runtime not found in any supported type');
-        
       } catch (error) {
         console.error('Failed to fetch runtime details:', error);
         setError(true);
@@ -115,7 +118,7 @@ const RuntimeDetail: React.FC = () => {
       module,
       detail: runtimeInfo?.runtime as any,
       isLoading: loading,
-      isError: error
+      isError: error,
     });
     // 将runtimeType单独存储
     if (runtimeInfo?.typeMeta) {
@@ -202,14 +205,18 @@ const RuntimeDetail: React.FC = () => {
           cardProps={{
             name: runtimeInfo?.runtime?.metadata.name || '',
             params: { namespace, name },
-            desc: get(runtimeInfo?.runtime, 'metadata.annotations["kubesphere.io/description"]', ''),
+            desc: get(
+              runtimeInfo?.runtime,
+              'metadata.annotations["kubesphere.io/description"]',
+              '',
+            ),
             actions: actions(),
             attrs,
             breadcrumbs: {
               label: t('RUNTIMES'),
               url: listUrl,
             },
-            icon: <RocketDuotone size={24}/>
+            icon: <RocketDuotone size={24} />,
           }}
         />
       )}

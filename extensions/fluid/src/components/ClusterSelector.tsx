@@ -16,14 +16,14 @@ const ClusterSelectorWrapper = styled.div`
   padding: 12px 16px;
   border-bottom: 1px solid #e3e9ef;
   background: #f9fbfd;
-  
+
   .cluster-label {
     font-size: 12px;
     color: #79879c;
     margin-bottom: 8px;
     display: block;
   }
-  
+
   .cluster-select {
     width: 100%;
   }
@@ -55,10 +55,11 @@ const ClusterSelector: React.FC = () => {
       }
 
       const data = await response.json();
-      const clusterList: ClusterInfo[] = data.items?.map((item: any) => ({
-        name: item.metadata.name,
-        displayName: item.spec?.displayName || item.metadata.name
-      })) || [];
+      const clusterList: ClusterInfo[] =
+        data.items?.map((item: any) => ({
+          name: item.metadata.name,
+          displayName: item.spec?.displayName || item.metadata.name,
+        })) || [];
 
       setClusters(clusterList);
     } catch (error) {
@@ -114,10 +115,12 @@ const ClusterSelector: React.FC = () => {
           className="cluster-select"
           value={currentCluster}
           disabled
-          options={[{
-            value: currentCluster,
-            label: currentCluster
-          }]}
+          options={[
+            {
+              value: currentCluster,
+              label: currentCluster,
+            },
+          ]}
         />
       </ClusterSelectorWrapper>
     );
@@ -133,7 +136,7 @@ const ClusterSelector: React.FC = () => {
         loading={isLoading}
         options={clusters.map(cluster => ({
           value: cluster.name,
-          label: cluster.displayName
+          label: cluster.displayName,
         }))}
         placeholder={isLoading ? t('LOADING') : t('SELECT_CLUSTER')}
       />

@@ -32,7 +32,7 @@ export const useWebSocketWatch = ({
     const wsUrl = getWebSocketUrl(wsPath);
 
     console.log(`=== 启动 ${resourcePlural} WebSocket监听 ===`);
-    console.log("WebSocket URL:", wsUrl);
+    console.log('WebSocket URL:', wsUrl);
 
     let ws: WebSocket | null = null;
     let reconnectTimeout: NodeJS.Timeout | undefined;
@@ -42,9 +42,8 @@ export const useWebSocketWatch = ({
     let connectionStartTime = 0;
 
     const connect = () => {
-
       try {
-        console.log("连接WebSocket:", wsUrl);
+        console.log('连接WebSocket:', wsUrl);
         ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
@@ -55,18 +54,18 @@ export const useWebSocketWatch = ({
 
           // WebSocket连接成功，停止任何正在进行的轮询
           if (pollingInterval) {
-            console.log("WebSocket连接成功，停止轮询");
+            console.log('WebSocket连接成功，停止轮询');
             clearInterval(pollingInterval);
             pollingInterval = undefined;
           }
         };
 
-        ws.onmessage = (event) => {
+        ws.onmessage = event => {
           console.log(`=== ${resourcePlural} WebSocket收到消息 ===`);
           try {
             const data = JSON.parse(event.data);
-            console.log("消息类型:", data.type);
-            console.log("对象名称:", data.object?.metadata?.name);
+            console.log('消息类型:', data.type);
+            console.log('对象名称:', data.object?.metadata?.name);
 
             // 处理 ADDED, DELETED, MODIFIED 事件
             if (['ADDED', 'DELETED', 'MODIFIED'].includes(data.type)) {
@@ -74,27 +73,34 @@ export const useWebSocketWatch = ({
               if (data.type === 'ADDED' && connectionStartTime > 0) {
                 const timeSinceConnection = Date.now() - connectionStartTime;
                 if (timeSinceConnection < initialEventsWindow) {
-                  console.log(`=== 跳过连接初期的ADDED事件 (连接后${timeSinceConnection}ms)，避免不必要的刷新 ===`);
+                  console.log(
+                    `=== 跳过连接初期的ADDED事件 (连接后${timeSinceConnection}ms)，避免不必要的刷新 ===`,
+                  );
                   return;
                 }
               }
 
-              console.log("=== 检测到数据变化，准备防抖刷新 ===");
+              console.log('=== 检测到数据变化，准备防抖刷新 ===');
               // 如果是 DELETED 事件，触发可选的删除回调（例如清空选中项）
               if (data.type === 'DELETED' && onResourceDeleted) {
-                console.log("检测到删除事件，执行onResourceDeleted回调");
+                console.log('检测到删除事件，执行onResourceDeleted回调');
                 onResourceDeleted();
               }
               // 使用防抖函数刷新表格
               debouncedRefresh();
             }
           } catch (e) {
-            console.error("解析WebSocket消息失败:", e);
+            console.error('解析WebSocket消息失败:', e);
           }
         };
 
-        ws.onclose = (event) => {
-          console.log(`=== ${resourcePlural} WebSocket连接关闭 ===`, event.code, event.reason || '无reason', ws?.url);
+        ws.onclose = event => {
+          console.log(
+            `=== ${resourcePlural} WebSocket连接关闭 ===`,
+            event.code,
+            event.reason || '无reason',
+            ws?.url,
+          );
           setWsConnected(false);
 
           // 如果组件未卸载且重连次数未达到上限，则尝试重连
@@ -108,10 +114,11 @@ export const useWebSocketWatch = ({
             }, delay);
           } else if (!isComponentUnmounting.current && reconnectCount >= maxReconnectAttempts) {
             // 重连次数用完，启动轮询保底方案
-            console.log("=== WebSocket重连失败，启动轮询保底方案 ===");
-            if (!pollingInterval) { // 防止重复设置轮询
+            console.log('=== WebSocket重连失败，启动轮询保底方案 ===');
+            if (!pollingInterval) {
+              // 防止重复设置轮询
               pollingInterval = setInterval(() => {
-                console.log("=== 执行轮询刷新 ===");
+                console.log('=== 执行轮询刷新 ===');
                 debouncedRefresh();
               }, refreshInterval);
             }
@@ -120,14 +127,14 @@ export const useWebSocketWatch = ({
           }
         };
 
-        ws.onerror = (error) => {
+        ws.onerror = error => {
           console.error(`=== ${resourcePlural} WebSocket错误 ===`, error);
           setWsConnected(false);
           // 如果 WebSocket 发生错误，立即尝试 fallback 到轮询
           if (!pollingInterval && !isComponentUnmounting.current) {
-            console.log("=== WebSocket错误，启动轮询保底方案 ===");
+            console.log('=== WebSocket错误，启动轮询保底方案 ===');
             pollingInterval = setInterval(() => {
-              console.log("=== 执行轮询刷新 ===");
+              console.log('=== 执行轮询刷新 ===');
               debouncedRefresh();
             }, refreshInterval);
           }
@@ -137,9 +144,9 @@ export const useWebSocketWatch = ({
         setWsConnected(false);
         // 如果 WebSocket 创建失败，立即 fallback 到轮询
         if (!pollingInterval && !isComponentUnmounting.current) {
-          console.log("=== WebSocket创建失败，启动轮询保底方案 ===");
+          console.log('=== WebSocket创建失败，启动轮询保底方案 ===');
           pollingInterval = setInterval(() => {
-            console.log("=== 执行轮询刷新 ===");
+            console.log('=== 执行轮询刷新 ===');
             debouncedRefresh();
           }, refreshInterval);
         }

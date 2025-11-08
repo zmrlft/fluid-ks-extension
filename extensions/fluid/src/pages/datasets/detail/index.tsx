@@ -72,7 +72,11 @@ interface Dataset {
 
 const DatasetDetail: React.FC = () => {
   const module = 'datasets';
-  const { cluster, namespace, name } = useParams<{ cluster: string; namespace: string; name: string }>();
+  const { cluster, namespace, name } = useParams<{
+    cluster: string;
+    namespace: string;
+    name: string;
+  }>();
   const navigate = useNavigate();
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -83,8 +87,6 @@ const DatasetDetail: React.FC = () => {
     yaml: '',
     readOnly: true,
   });
-
-
 
   // 存储详情页数据到全局状态
   const [, setDetailProps] = useStore('DatasetDetailProps', {
@@ -105,10 +107,12 @@ const DatasetDetail: React.FC = () => {
   // 获取数据集详情
   useEffect(() => {
     const fetchDatasetDetail = async () => {
-      console.log("fetchDatasetDetail被调用了")
+      console.log('fetchDatasetDetail被调用了');
       try {
         setLoading(true);
-        const response = await request(`/apis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets/${name}`);
+        const response = await request(
+          `/apis/data.fluid.io/v1alpha1/namespaces/${namespace}/datasets/${name}`,
+        );
         if (!response.ok) {
           throw new Error(`Failed to fetch dataset: ${response.statusText}`);
         }
@@ -130,11 +134,11 @@ const DatasetDetail: React.FC = () => {
 
   // 更新全局状态
   useEffect(() => {
-    setDetailProps({ 
-      module, 
-      detail: dataset as any, 
-      isLoading: loading, 
-      isError: error 
+    setDetailProps({
+      module,
+      detail: dataset as any,
+      isLoading: loading,
+      isError: error,
     });
   }, [dataset, loading, error]);
 
@@ -173,7 +177,7 @@ const DatasetDetail: React.FC = () => {
                 onSuccess: () => {
                   // 删除成功后跳转回列表页
                   navigate(listUrl);
-                }
+                },
               });
             }}
           >
@@ -187,7 +191,7 @@ const DatasetDetail: React.FC = () => {
   // 定义属性
   const attrs = useMemo(() => {
     if (!dataset) return [];
-    
+
     return [
       {
         label: t('STATUS'),
@@ -245,7 +249,7 @@ const DatasetDetail: React.FC = () => {
               label: t('DATASETS'),
               url: listUrl,
             },
-            icon: <Book2Duotone size={24}/>
+            icon: <Book2Duotone size={24} />,
           }}
         />
       )}
@@ -261,4 +265,4 @@ const DatasetDetail: React.FC = () => {
   );
 };
 
-export default DatasetDetail; 
+export default DatasetDetail;
